@@ -27,4 +27,9 @@ De momento ninguna  de las funciones principales pueden trabajar por separado, d
 
 ## ¿Qué procesos son independientes?
 
-El sistema contará con un módulo independiente de notificaciones implementado mediante una AP
+El sistema contará con un módulo independiente de notificaciones implementado mediante una APi
+
+# ¿Cómo se comunican?
+## ¿Qué servicio necesita información de otro?
+El servicio de autenticación necesita consultar a la base de datos. Para poder agendar una cita se necesita estar autenticado. Para obtener un historial se requiere de una cita, y para las notificaciones se requiere tener programada una cita.
+
