@@ -1,7 +1,7 @@
 # Arquitectura del Sistema:  Plataforma de Gestión de Citas Médicas
 ## Problema que resuelve.
 Uno de los problemas que consideramos resuelve el sistema es la dificultad que existe para agendar una cita médica ya que permite hacerlo sin fila, ni turnos, ni llamadas.
-## Roles entro del equipo
+## Roles Dentro del equipo
 
 - Líder del proyecto: Ricardo Hoyos Lopez
 - Encargado de documentación: John Alexander Pantoja Jiménez
