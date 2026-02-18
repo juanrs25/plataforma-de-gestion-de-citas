@@ -64,3 +64,49 @@ La pérdida de datos provocaría que el sistema dejará de funcionar correctamen
 
 ## ¿Todos los servicios usan la misma base de datos?
 Sí, cada uno de los servicios del sistema utilizan la misma base de datos.
+
+# Usuarios del Sistema
+Pacientes y Doctores
+
+# Riesgos y fallas 
+## Identifaciar usuarios
+## ¿Quién usará el sistema?
+Doctores y Pacientes
+## ¿Todos pueden hacer lo mismo?
+No, cada usuario contará con un rol específico dentro de la plataforma, el cual determinará los permisos y acciones que puede realizar.  De esta manera, se puede garantizar un control adecuado sobre las funciones disponibles y la seguridad de la información manejada.
+
+- Doctor: Revisa su agenda, historial de pacientes y confirma asistencia de citas.
+- Paciente: Agenda, cancela, reprograma y consulta citas.
+
+# Fallas y riesgos
+## ¿Que pasaria si falla... ?
+### Base de datos:
+No se podrian consultar las citas de los usuarios y el sistema quedará inoperativo.
+- Posibles soluciones:
+1. Copias de seguridad
+2. Base de datos secundaria
+3. Información en varios servidores
+### Servidor principal:
+El sistema  no estaría disponible para los usuarios.
+- Posibles soluciones:
+1. Servidor de respaldo
+2. Monitoreo del sistema
+### Autenticación:
+Lo ususario no podran iniciar sesion ni registrarse en el sistema.
+- Posibles soluciones:
+1. Permitir un acceso limitado sin autenticación para funciones básicas, como consultar información general o soporte.
+2. Tener un segundo método de inicio de sesión como por ejemplo autenticación con google u otro servicio externo.
+3. Mantener activas sesiones de usuarios que ya estaban logueados, para que no se pierda acceso inmediato.
+
+### Citas:
+Los usuarios no podrán agendar citas
+- Posibles soluciones:
+1. Validación previa de disponibilidad antes de confirmar la cita.
+2. Implementar cache temporal para disponibilidad.
+
+## Notificaciones:
+Los usuarios no recibiran confirmaciones a su correo acerca de las citas.
+- Posible solucion:
+1. Implementar proveedor de respaldo, si el principal servidor no responde usar automaticamente el secundario.
+
+
