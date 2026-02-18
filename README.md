@@ -23,7 +23,7 @@ El sistema resuelve la dificultad que existe para agendar una cita médica, perm
 
 ---
 
-## ❗ ¿Qué pasaría si no existiera?
+##  ¿Qué pasaría si no existiera?
 
 - Los usuarios gastarían tiempo y dinero en transporte.
 - Se mantendrían los tiempos de espera por llamadas.
@@ -38,10 +38,10 @@ El sistema resuelve la dificultad que existe para agendar una cita médica, perm
 
 El sistema está dividido en los siguientes módulos:
 
-- 🔐 Autenticación
-- 📅 Gestión de Citas
-- 📄 Historial
-- 📧 Notificaciones
+- Autenticación
+- Gestión de Citas
+- Historial
+- Notificaciones
 
 Actualmente, todos los servicios utilizan una única base de datos local.
 
@@ -49,7 +49,7 @@ El módulo de notificaciones se implementará como un servicio independiente med
 
 ---
 
-# 🔄 Comunicación entre Servicios
+# Comunicación entre Servicios
 
 - El servicio de autenticación consulta la base de datos.
 - Para agendar una cita, el usuario debe estar autenticado.
@@ -75,7 +75,7 @@ Se eligió esta arquitectura porque:
 
 # Base de Datos
 
-## 📌 Información almacenada
+## Información almacenada
 
 - Información de usuarios
 - Citas (agendadas, reprogramadas, canceladas)
@@ -83,13 +83,13 @@ Se eligió esta arquitectura porque:
 - Horarios disponibles de doctores
 - Notificaciones enviadas
 
-## 🔒 Datos Críticos
+## Datos Críticos
 
 - Datos personales de los usuarios
 - Información de citas
 - Historial médico
 
-## ⚠ Riesgo si se pierden los datos
+## Riesgo si se pierden los datos
 
 - El sistema quedaría inoperativo.
 - Se perdería información médica.
@@ -116,9 +116,9 @@ Todos los servicios utilizan la misma base de datos.
 
 ---
 
-# ⚠ Fallas y Riesgos
+# Fallas y Riesgos
 
-## 🗄 Falla en Base de Datos
+## Falla en Base de Datos
 **Impacto:** Sistema inoperativo.
 
 **Soluciones:**
@@ -128,7 +128,7 @@ Todos los servicios utilizan la misma base de datos.
 
 ---
 
-## 🖥 Falla en Servidor Principal
+## Falla en Servidor Principal
 **Impacto:** Sistema no disponible.
 
 **Soluciones:**
@@ -156,7 +156,7 @@ Todos los servicios utilizan la misma base de datos.
 
 ---
 
-## 📧 Falla en Notificaciones
+## Falla en Notificaciones
 **Impacto:** Usuarios no reciben confirmaciones por correo.
 
 **Soluciones:**
