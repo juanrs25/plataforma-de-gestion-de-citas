@@ -29,3 +29,6 @@ De momento ninguna  de las funciones principales pueden trabajar por separado, d
 
 El sistema contará con un módulo independiente de notificaciones implementado mediante una API
 
+# ¿Cómo se comunican?
+## ¿Qué servicio necesita información de otro?
+El servicio de autenticación necesita consultar a la base de datos. Para poder agendar una cita se necesita estar autenticado. Para obtener un historial se requiere de una cita, y para las notificaciones se requiere tener programada una cita.
