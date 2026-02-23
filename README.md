@@ -114,6 +114,22 @@ La pérdida de estos datos provocaría que el sistema dejará de funcionar corre
 En esta fase inicial, sí. Cada uno de los servicios del sistema utilizan la misma base de datos.
 
 ---
+# PARTE 6 – FALLAS Y RIESGOS
+
+## Paso 6: Identificar usuarios
+
+### ¿Quién usará el sistema?
+- Doctores  
+- Pacientes  
+
+### ¿Todos pueden hacer lo mismo?
+No, cada usuario contará con un rol y permisos distintos dentro de la plataforma. De esta manera, se garantiza un control adecuado sobre las funciones disponibles y la seguridad de la información.
+
+- Doctor: Revisa su agenda, confirma o cancela citas.  
+- Paciente: Busca disponibilidad, agenda, cancela, reprograma y consulta historial de citas, recibe notificaciones.  
+
+---
+
 
 
 
