@@ -124,6 +124,49 @@ No, cada usuario contará con un rol y permisos distintos dentro de la plataform
 - Doctor: Revisa su agenda, confirma o cancela citas.  
 - Paciente: Busca disponibilidad, agenda, cancela, reprograma y consulta historial de citas, recibe notificaciones.  
 
+# PARTE 7 — FALLAS Y RIESGOS
+
+## Paso 7: Pensar como ingenieros reales
+
+### ¿Qué pasaría si falla?
+
+#### Base de datos
+No se podrán consultar las citas de los usuarios y el sistema quedará inoperativo.
+
+**Posibles soluciones:**
+- Copias de seguridad regulares  
+- Base de datos secundaria  
+- Información en varios servidores  
+
+#### Servidor principal
+El sistema no estaría disponible para los usuarios.
+
+**Posibles soluciones:**
+- Servidor de respaldo  
+- Monitoreo del sistema  
+
+#### Autenticación
+Los usuarios no podrán iniciar sesión ni registrarse en el sistema.
+
+**Posibles soluciones:**
+- Permitir un acceso limitado sin autenticación para funciones básicas, como consultar información general o soporte.  
+- Tener un segundo método de inicio de sesión, como autenticación con Google u otro servicio externo.  
+- Mantener activas sesiones de usuarios que ya estaban logueados, para que no se pierda acceso inmediato.  
+
+#### Citas
+Los usuarios no podrán agendar las citas o existe riesgo de doble reserva.
+
+**Posibles soluciones:**
+- Validación previa de disponibilidad antes de confirmar cita.  
+- Implementar caché temporal para disponibilidad.  
+- Pruebas de concurrencia.  
+
+### Notificaciones:
+Los usuarios no recibirán confirmaciones a su correo acerca de sus citas
+
+Posibles solución:
+
+- Implementar proveedor de respaldo, si el proveedor principal no responde debe utilizar automáticamente el secundario
 
 
 
