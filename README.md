@@ -55,3 +55,14 @@ Por el momento ninguna de las funciones, a excepción de las notificaciones, pue
 El sistema cuenta con un módulo independiente de notificaciones implementado mediante una API.
 
 
+# PARTE 3 – ¿CÓMO SE COMUNICAN?
+
+## Paso 3: Conexión entre servicios
+
+### ¿Qué servicio necesita información de otro?
+- El servicio de autenticación necesita consultar a la base de datos.  
+- El servicio de gestión de citas requiere que el usuario esté autenticado.  
+- El servicio de historial de citas muestra el registro de eventos asociados a citas previas. No requiere cita activa para mostrar registros históricos.  
+- El servicio de notificaciones consume eventos de la gestión de citas para mandar las notificaciones al correo.  
+
+
