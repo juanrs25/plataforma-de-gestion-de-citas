@@ -67,5 +67,30 @@ El sistema cuenta con un módulo independiente de notificaciones implementado me
 - El servicio de notificaciones consume eventos de la gestión de citas para mandar las notificaciones al correo.  
 
 ---
+# PARTE 4 – ELEGIR LA ARQUITECTURA
+
+## Paso 4: Tipo de arquitectura
+
+### Arquitectura seleccionada
+X Cliente–Servidor  
+- Arquitectura en capas  
+- Microservicios  
+- Basados en eventos  
+- Híbrida  
+
+### ¿Cuántos usuarios tendrá el sistema?
+El sistema contará con 60 pacientes y 6 profesionales en el área de medicina general. Se prevé escalabilidad con el aumento de usuarios.
+
+### ¿Necesita escalar?
+Sí, debido al aumento previsto de usuarios y profesionales.
+
+### ¿Es un sistema pequeño o grande?
+El sistema es pequeño en la fase inicial.
+
+### Justificación
+Elegimos la arquitectura cliente-servidor para un desarrollo inicial ya que se puede hacer rápido y controlado, manteniendo una arquitectura modular que facilite la migración futura a microservicios cuando los requisitos lo demanden.
+
+---
+
 
 
