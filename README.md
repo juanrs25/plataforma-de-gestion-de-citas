@@ -40,3 +40,22 @@ Consideramos que el problema que resuelve el sistema es la dificultad que existe
 Los usuarios tendrán que seguir desplazándose a los centros de atención, perder tiempo en largas colas o salas de espera, gastar dinero en transportes y en caso de hacerlo por vía telefónica enfrentarse a esperas prolongadas.
 
 ---
+
+# PARTE 2 – IDENTIFICAR LOS SERVICIOS
+
+## Paso 2: Dividir el sistema
+Un sistema distribuido se divide en servicios.
+
+### ¿Qué funciones principales tiene el sistema?
+- Autenticación  
+- Gestión de citas (Buscar disponibilidad, reservar, reprogramar, cancelar)  
+- Historial de citas (Registro de eventos: agendada, reprogramada, cancelada, asistida)  
+- Notificaciones (Envío de correo electrónico)  
+
+### ¿Qué partes pueden trabajar por separado?
+Por el momento ninguna de las funciones, a excepción de las notificaciones, pueden trabajar de forma independiente, debido a que todas acceden a una única base de datos local.
+
+### ¿Qué procesos son independientes?
+El sistema cuenta con un módulo independiente de notificaciones implementado mediante una API.
+
+---
