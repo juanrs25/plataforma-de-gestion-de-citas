@@ -20,8 +20,6 @@ La solución propuesta permite gestionar citas médicas en línea, de forma ági
 - Encargado Técnico: Juan Manuel Rodriguez  
 - Encargado de presentación: Heidy Gabriela Jalvin Avirama  
 
-### Acceso al repositorio en GitHub
-ok
 
 ---
 
