@@ -97,4 +97,29 @@ Elegimos la arquitectura cliente-servidor para un desarrollo inicial ya que se p
 
 ---
 
+# PARTE 5 – BASE DE DATOS
+
+## Paso 5: Datos del sistema
+
+### ¿Qué información debe guardarse?
+- Información de los usuarios (Datos personales y roles)  
+- Citas (estado, fecha, hora, doctor, paciente)  
+- Historial de citas (creadas, reprogramadas, canceladas, asistidas)  
+- Horarios disponibles de los doctores  
+- Notificaciones enviadas  
+
+### ¿Qué datos son críticos?
+- Datos personales de los usuarios  
+- Información de las citas  
+- Historial de citas  
+
+### ¿Qué pasaría si se pierden?
+La pérdida de estos datos provocaría que el sistema dejará de funcionar correctamente, ya que se eliminaría información esencial, como la de usuarios y sus citas. Esto generaría desorganización en la atención, afectando tanto a pacientes como a doctores. Además, los usuarios perderían confianza en la plataforma al percibir que su información personal y médica no está protegida. También se pueden derivar consecuencias legales para la plataforma debido al manejo inadecuado de datos personales.
+
+### ¿Todos los servicios usan la misma base de datos o cada uno tiene la suya?
+En esta fase inicial, sí. Cada uno de los servicios del sistema utilizan la misma base de datos.
+
+---
+
+
 
