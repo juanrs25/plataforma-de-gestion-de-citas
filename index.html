@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Actividad Clase 4</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f6f8;
+        margin: 0;
+        padding: 0;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: auto;
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      h1,
+      h2 {
+        color: #2c3e50;
+      }
+
+      h1 {
+        text-align: center;
+      }
+
+      .section {
+        margin-top: 30px;
+      }
+
+      label {
+        font-weight: bold;
+      }
+
+      .line {
+        border-bottom: 1px solid #ccc;
+        margin: 8px 0 16px 0;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+
+      th,
+      td {
+        border: 1px solid #ccc;
+        padding: 8px;
+        text-align: center;
+      }
+
+      th {
+        background-color: #e9eef3;
+      }
+
+      .note {
+        background: #eef7ff;
+        padding: 15px;
+        border-left: 4px solid #3498db;
+        margin-top: 20px;
+      }
+
+      .footer {
+        margin-top: 30px;
+        padding: 15px;
+        background: #f1f1f1;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🌐 Actividad Clase 4</h1>
+      <h2>Comunicación entre Servicios + REST + Eventos + Service Discovery</h2>
+
+      <p>
+        <strong>Equipo:</strong> Ricardo Hoyos Lopez, Johnn Alexander Pantoja
+        Jiménez, Juan Manuel Rodriguez y Heidy Gabriela Jalvin Avirama
+      </p>
+      <p><strong>Proyecto:</strong>Plataforma de gestión de citas médicas</p>
+
+      <div class="section">
+        <h2>🪜 1. Interacciones entre Servicios</h2>
+
+        <p><strong>Interacción 1</strong></p>
+        <label>Servicio que envía:</label>
+        <div class="line">Servicio de Autenticación</div>
+        <label>Servicio que recibe:</label>
+        <div class="line">Servicio de Gestión de Citas</div>
+        <label>Información enviada:</label>
+        <div class="line">
+          ID del paciente autenticado, Token de autenticacion, Rango de fechas
+          de búsqueda para disponibilidad
+        </div>
+        <label>¿Qué sucede si no responde?</label>
+        <div class="line">
+          Si el servicio de gestión de citas no responde el usuario no podrá
+          visualizar disponibilidad de citas, ni agendarlas, el sistema debe
+          mostrar un mensaje de servicio temporalmente no disponible, ademas, es
+          fundamental que esto no bloquee el sistema completo, solo al
+          agendamiento de citas.
+        </div>
+
+        <p><strong>Interacción 2</strong></p>
+        <label>Servicio que envía:</label>
+        <div class="line">Servicio de Gestión de Citas</div>
+        <label>Servicio que recibe:</label>
+        <div class="line">Servicio de Historial de Citas</div>
+        <label>Información enviada:</label>
+        <div class="line">
+          ID de la cita , ID del paciente, ID del doctor que atenderá la cita,
+          fecha y hora de creción de la cita, fecha y hora preogramada para la
+          cita, estado de la cita.
+        </div>
+        <label>¿Qué sucede si no responde?</label>
+        <div class="line">
+          La cita queda creada correctamente en el servicio de Citas, pero en el
+          historial no se actualizará de inmediato, esto no debe afectar la
+          confirmación de la cita al paciente.
+        </div>
+
+        <p><strong>Interacción 3</strong></p>
+        <label>Servicio que envía:</label>
+        <div class="line">Servicio de historial</div>
+        <label>Servicio que recibe:</label>
+        <div class="line">Servicio de notificaciones</div>
+        <label>Información enviada:</label>
+        <div class="line">
+          ID cita, ID Doctor(Nombre), ID Paciente(nombre), Fecha y hora de la
+          cita, Estado de cita
+        </div>
+        <label>¿Qué sucede si no responde?</label>
+        <div class="line">
+          Si no responde, el servicio de historial queda actualizado debido a
+          que trabaja de forma independiente, pero el paciente no recibe la
+          notificaciones sucedidas en el servicio de historial, por tanto el
+          sistema debe reintentar el envio sin afectar el funcionameinto general
+          del sistema
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>🪜 2. REST o Eventos</h2>
+
+        <table>
+          <tr>
+            <th>Interacción</th>
+            <th>REST</th>
+            <th>Evento</th>
+            <th>¿Por qué?</th>
+          </tr>
+          <tr>
+            <td>1</td>
+            <td>X</td>
+            <td></td>
+            <td>
+              La busqueda de disponibilidad se limita a la visualizacion de la
+              disponibilidad y no desencadena acciones adicionales,por eso, la
+              comunicacion entre estos dos servicios es de forma sincorna, lo
+              que garantiza que el usuario reciba en tiempo real la información
+              solicitada sin esperas innecesarias.
+            </td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td></td>
+            <td>X</td>
+            <td>
+              Consideramos que es evento por que no es una consulta directa,
+              sino una reaccion del sistema a algo que ocurrio, en este caso la
+              creación de cita. El historial solo necesita enterarse del evento
+              y registrar los datos, sin interrumpir el proceso principal que es
+              el agendamiento.
+            </td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td></td>
+            <td>X</td>
+            <td>
+              Es envento porque el servicio de historial solo informa que
+              ocurrio un cambio y el servicio de notificacion reacciona a ese
+              evento, enviado al usuario correspondiente.
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="section">
+        <h2>🪜 3. Síncrono o Asíncrono</h2>
+
+        <table>
+          <tr>
+            <th>Interacción</th>
+            <th>Síncrono</th>
+            <th>Asíncrono</th>
+            <th>Justificación</th>
+          </tr>
+          <tr>
+            <td>1</td>
+            <td>X</td>
+            <td></td>
+            <td>
+              Porque el usuario requiere ver los horarios disponibles
+              inmediatamente tras la consulta, no se necesita que se hagan mas
+              acciones que mostrar el resultado de dicha busqueda
+            </td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td></td>
+            <td>X</td>
+            <td>
+              Porque la crecion de cita no debe esperar a que el historial la
+              registre. El usuario confirma la cita y en segundo plano el
+              historial se actualiza.
+            </td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td></td>
+            <td>X</td>
+            <td>
+              El envio de notificaciones no debe bloquear el sistema, el evento
+              es escuchado y el servicio de notificaciones lo procesa en segundo
+              plano
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="section">
+        <h2>🪜 4. Eventos Importantes del Sistema</h2>
+        1️⃣ Cita Agendada<br /><br />
+        2️⃣ Cita Cancelada<br /><br />
+        3️⃣ Cita Reprogramada<br /><br />
+        4️⃣ Cita Asistida
+      </div>
+
+      <div class="section">
+        <h2>🪜 5. Análisis de Fallos</h2>
+        <label>Servicio más crítico: </label>
+        <div class="line">Gestion de Citas</div>
+        <label>¿Qué pasaría si falla?</label>
+        <div class="line">
+          Si el servicio de gestión de citas falla, los pacientes no podrán
+          agendar, cancelar ni cambiar sus citas médicas, y los doctores no
+          podrán visualizar los pacientes agendados. Esto afectaría directamente
+          la atención médica, generaría desorden en los horarios y frustración
+          en los usuarios, ya que el sistema dejaría de cumplir su función
+          principal.
+        </div>
+        <label>¿El sistema debe detenerse o continuar?</label>
+        <div class="line">
+          Si el servicio de gestión de citas falla, el sistema debería continuar
+          funcionando de manera parcial, permitiendo el acceso de los usuarios y
+          la consulta de citas agendadas en el servicio de historial, pero sin
+          la posibilidad de crear, modificar o cancelar citas hasta que el
+          servicio sea restablecido.
+        </div>
+        <label>¿Cómo podrían manejar este fallo?</label>
+        <div class="line">
+          Si falla el servicio de gestión de citas, el sistema puede manejarlo
+          mostrando un mensaje claro al usuario indicando que el agendamiento
+          está temporalmente inhabilitado, mientras permite usar otras funciones
+          como iniciar sesión y consultar información disponible. Además, se
+          puede usar un “circuit breaker” para evitar seguir llamando al
+          servicio cuando está fallando y así no empeorar el problema
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>🪜 6. Service Discovery</h2>
+        <label>¿Qué problema ocurre si cambia la IP de un servicio?</label>
+        <div class="line">
+          Si la dirección IP de un servicio cambia, los demás servicios no
+          podrán encontrarlo ni comunicarse con él, porque seguirán intentando
+          conectarse a la dirección anterior. Como resultado, algunas funciones
+          del sistema dejarían de funcionar temporalmente, mostrando errores o
+          tiempos de espera prolongados, hasta que se actualice la nueva
+          dirección o se restablezca la conexión correctamente.
+        </div>
+        <label>¿Cómo sabría un servicio dónde encontrar otro?</label>
+        <div class="line">
+          Un servicio puede saber dónde encontrar a otro si la dirección está
+          configurada previamente en el sistema (por ejemplo, guardada en la
+          configuración). Sin embargo, si la IP cambia y no se actualiza esa
+          información, los servicios no podrán comunicarse correctamente.
+        </div>
+        <label>¿Por qué sería útil Service Discovery?</label>
+        <div class="line">
+          Service Discovery sería útil porque permite que los servicios se
+          encuentren automáticamente sin depender de una IP fija. En lugar de
+          guardar una dirección específica, los servicios consultan un registro
+          que les indica dónde está disponible el otro servicio en ese momento.
+          Así, si la IP cambia, el sistema sigue funcionando sin necesidad de
+          hacer cambios manuales.
+        </div>
+        <label>¿Dónde lo aplicarían en su sistema?</label>
+        <div class="line">
+          Lo aplicaríamos en la comunicación entre los servicios principales,
+          especialmente entre el servicio de gestión de citas, autenticación y
+          notificaciones. De esta manera, si alguno cambia de dirección o se
+          mueve a otro servidor, los demás servicios podrán ubicarlo
+          automáticamente y continuar funcionando sin interrupciones.
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>🪜 7. Mini Diagrama</h2>
+        <p>Dibujen:</p>
+        <p><strong>Servicio A → Service Discovery → Servicio B</strong></p>
+        <img src="_Diagrama de flujo.png" alt="" width="500" />
+      </div>
+
+      <div class="note">
+        💡 <strong>Ayuda rápida</strong><br />
+        REST → petición directa<br />
+        Evento → algo ocurrió<br />
+        Síncrono → espera respuesta<br />
+        Asíncrono → continúa sin esperar<br />
+        Service Discovery → permite encontrar servicios automáticamente
+      </div>
+
+      <div class="footer">
+        🎤 El equipo debe poder explicar:<br />
+        ✔ una interacción importante<br />
+        ✔ un evento del sistema<br />
+        ✔ qué pasa si un servicio falla<br />
+        ✔ dónde usarían Service Discovery
+      </div>
+    </div>
+  </body>
+</html>
