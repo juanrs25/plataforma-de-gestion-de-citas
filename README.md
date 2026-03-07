@@ -20,7 +20,6 @@ La solución propuesta permite gestionar citas médicas en línea, de forma ági
 - Encargado Técnico: Juan Manuel Rodriguez  
 - Encargado de presentación: Heidy Gabriela Jalvin Avirama  
 
-
 ---
 
 # PARTE 1 — ENTENDER EL PROBLEMA
@@ -36,8 +35,8 @@ Consideramos que el problema que resuelve el sistema es la dificultad que existe
 
 ### ¿Qué pasaría si no existiera?
 Los usuarios tendrán que seguir desplazándose a los centros de atención, perder tiempo en largas colas o salas de espera, gastar dinero en transportes y en caso de hacerlo por vía telefónica enfrentarse a esperas prolongadas.
-
 ---
+
 # PARTE 2 – IDENTIFICAR LOS SERVICIOS
 
 ## Paso 2: Dividir el sistema
@@ -64,8 +63,7 @@ El sistema cuenta con un módulo independiente de notificaciones implementado me
 - El servicio de autenticación necesita consultar a la base de datos.  
 - El servicio de gestión de citas requiere que el usuario esté autenticado.  
 - El servicio de historial de citas muestra el registro de eventos asociados a citas previas. No requiere cita activa para mostrar registros históricos.  
-- El servicio de notificaciones consume eventos de la gestión de citas para mandar las notificaciones al correo.  
-
+- El servicio de notificaciones consume eventos de la gestión de citas para mandar las notificaciones al correo.
 ---
 # PARTE 4 – ELEGIR LA ARQUITECTURA
 
@@ -91,6 +89,7 @@ El sistema es pequeño en la fase inicial.
 Elegimos la arquitectura cliente-servidor para un desarrollo inicial ya que se puede hacer rápido y controlado, manteniendo una arquitectura modular que facilite la migración futura a microservicios cuando los requisitos lo demanden.
 
 ---
+
 # PARTE 5 – BASE DE DATOS
 
 ## Paso 5: Datos del sistema
@@ -171,10 +170,4 @@ Los usuarios no recibirán confirmaciones a su correo acerca de sus citas
 
 Posibles solución:
 
-- Implementar proveedor de respaldo, si el proveedor principal no responde debe utilizar autmoaticamente el secundario
-
-
-
-
-
-
+- Implementar proveedor de respaldo, si el proveedor principal no responde debe utilizar automáticamente el secundario
