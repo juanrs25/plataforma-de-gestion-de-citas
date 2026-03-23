@@ -1,0 +1,50 @@
+services:
+  frontend:
+    image: nginx:alpine
+    container_name: frontend_courses
+    ports:
+      - "8080:80"
+    # volumes comparte una carpeta local con el contenedor, en este caso la carpeta frontend con la carpeta html de nginx
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    # Controla el orden de inicio
+    depends_on:
+      - backend
+
+  backend:
+    build: .
+    container_name: backend_courses
+    ports:
+      - "5001:5001"
+    environment:
+      DB_USER: root
+      DB_PASS: root
+      DB_HOST: db
+      DB_NAME: cursos_escuela
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.0
+    container_name: mysql_courses
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: cursos_escuela
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+    # Verifica que MySQL responda a peticiones
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+    # Realiza la prueba cada 10 segundos
+      interval: 10s
+    # Si no responde en 5 segundos, la prueba falla
+      timeout: 5s
+    # Después de 10 fallos consecutivos, el contenedor se marca como fallido
+      retries: 10
+
+volumes:
+  mysql_data:
