@@ -2,6 +2,7 @@ from ast import If
 
 from flask import Flask, request, jsonify
 import mysql.connector
+import requests
 import os
 
 app = Flask(__name__)
@@ -103,6 +104,56 @@ def list_users():
         for user in users
     ]
     return jsonify(user_list)
+
+
+# Este ees el endpint que hara se comunica con el servicio de citas
+
+
+@app.route("/disponibilidad", methods=["GET"])
+def ver_disponibilidad():
+    # en el json no olvidar que enviamos el id de doctor sino no funciona xd
+    id_doctor = request.args.get("id_doctor")
+
+    # 1. URL interna de Docker: Usamos el nombre del servicio "citas" y su puerto interno (5000)
+    # Esto cumple la regla: "Uso correcto de nombres de servicio dentro de Docker (no localhost)"
+
+    params = {}
+    if id_doctor:
+        params["id_doctor"] = id_doctor
+
+    try:
+        # 2. Hacemos la petición HTTP GET.
+        # El timeout=3 (segundos) es CLAVE para cumplir tu regla:
+        # "es fundamental que esto no bloquee el sistema completo"
+        respuesta = requests.get(
+            "http://citas:5000/disponibilidad", params=params, timeout=3
+        )
+        respuesta.raise_for_status()  # Lanza un error si Citas devuelve 4xx o 5xx
+
+        datos = respuesta.json()
+
+        return (
+            jsonify(
+                {
+                    "mensaje": "Consulta exitosa desde Autenticación",
+                    "datos_citas": datos,
+                }
+            ),
+            200,
+        )
+
+    except requests.exceptions.RequestException as e:
+        # 3. Manejo de error si Citas está caído.
+        # Cumple la regla: "mostrar un mensaje de servicio temporalmente no disponible"
+        return (
+            jsonify(
+                {
+                    "Error": "Servicio de gestión de citas temporalmente no disponible.",
+                    "Detalle_tecnico": str(e),
+                }
+            ),
+            503,
+        )
 
 
 if __name__ == "__main__":

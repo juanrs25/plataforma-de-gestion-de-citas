@@ -65,5 +65,57 @@ def crear_cita():
         return jsonify({"Error": str(e)}), 400
 
 
+# Este endpoint sera el que se conecte con citas para ver disponibilidad.
+
+
+@app.route("/disponibilidad", methods=["GET"])
+def consultar_disponibilidad():
+
+    doctor_id = request.args.get("id_doctor")
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        if doctor_id:
+            cursor.execute(
+                "SELECT id_doctor_citas, fecha_programacion_citas, hora_programacion_citas, estado_citas FROM citas WHERE id_doctor_citas = %s",
+                (doctor_id,),
+            )
+        else:
+            cursor.execute(
+                "SELECT id_doctor_citas, fecha_programacion_citas, hora_programacion_citas, estado_citas FROM citas"
+            )
+
+        citas = cursor.fetchall()
+
+        # aqui formamos el json
+        lista_ocupados = [
+            {
+                "id_doctor": cita[0],
+                "fecha": str(cita[1]),
+                "hora": str(cita[2]),
+                "estado": cita[3],
+            }
+            for cita in citas
+        ]
+
+        return (
+            jsonify(
+                {
+                    "mensaje": "Consulta de disponibilidad exitosa",
+                    "horarios_ocupados": lista_ocupados,
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        return jsonify({"Error": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
