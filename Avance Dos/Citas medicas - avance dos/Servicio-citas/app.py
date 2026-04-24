@@ -37,6 +37,7 @@ def test_db():
         return f"Error de conexión: {str(e)}"
 
 
+# Aqui con este endpoint agendamos citas
 @app.route("/agendar", methods=["POST"])
 def crear_cita():
     data = request.get_json()
@@ -63,6 +64,55 @@ def crear_cita():
 
     except Exception as e:
         return jsonify({"Error": str(e)}), 400
+
+
+# Este es para ver las citas agendadas por usuario osea el paciente xd
+
+
+@app.route("/citas_paciente", methods=["GET"])
+def consultar_citas_paciente():
+    id_paciente = request.args.get("id_paciente")
+
+    if not id_paciente:
+        return jsonify({"Error": "El id_paciente es obligatorio"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(
+            "SELECT id_paciente_citas, id_doctor_citas, fecha_programacion_citas, hora_programacion_citas, estado_citas FROM citas WHERE id_paciente_citas = %s",
+            (id_paciente,),
+        )
+        citas = cursor.fetchall()
+
+        lista_citas = [
+            {
+                "id_paciente": cita[0],
+                "id_doctor": cita[1],
+                "fecha": str(cita[2]),
+                "hora": str(cita[3]),
+                "estado": cita[4],
+            }
+            for cita in citas
+        ]
+
+        return (
+            jsonify(
+                {
+                    "mensaje": "Consulta de citas del paciente exitosa",
+                    "total_citas": len(lista_citas),
+                    "citas": lista_citas,
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        return jsonify({"Error": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
 
 
 # Este endpoint sera el que se conecte con citas para ver disponibilidad.
