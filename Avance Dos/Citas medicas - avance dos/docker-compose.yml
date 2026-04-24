@@ -1,8 +1,21 @@
 services:
+
+  # API GATEWAY
+
+  gateway:
+    build: ./Servicio-gateway
+    ports:
+      - "5000:5000"
+    depends_on:
+      - autenticacion
+      - citas
+
+  # SERVICIO AUTENTICACION
+
   autenticacion:
     build: ./Servicio-autenticacion
     ports:
-      - "5000:5000"
+      - "5001:5000"
     depends_on:
       - db_autenticacion
     env_file:
@@ -10,8 +23,6 @@ services:
 
   db_autenticacion:
     image: mysql:8.0
-    # env_file:
-    #   - .env
     environment:
       MYSQL_ROOT_PASSWORD: ${AUTH_MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${AUTH_MYSQL_DATABASE}
@@ -20,10 +31,12 @@ services:
     volumes:
       - db_auth_data:/var/lib/mysql
 
+  # SERVICIO CITAS
+
   citas:
     build: ./Servicio-citas
     ports:
-      - "5001:5000"
+      - "5002:5000"
     depends_on:
       - db_citas
     env_file:

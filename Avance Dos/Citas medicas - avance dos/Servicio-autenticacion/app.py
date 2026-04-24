@@ -138,7 +138,7 @@ def ver_disponibilidad():
         )
 
     except requests.exceptions.RequestException as e:
-        #  manejo de errors
+        #  manejo de errores
         return (
             jsonify(
                 {
