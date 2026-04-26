@@ -106,48 +106,38 @@ def list_users():
     return jsonify(user_list)
 
 
-# Este ees el endpint que hara se comunica con el servicio de citas
 
 
-@app.route("/disponibilidad", methods=["GET"])
-def ver_disponibilidad():
-    # en el json no olvidar que enviamos el id de doctor sino no funciona xd
-    id_doctor = request.args.get("id_doctor")
 
-    params = {}
-    if id_doctor:
-        params["id_doctor"] = id_doctor
+# Este endpoint sera usado por citas para verificar al doctor:
 
-    try:
-        #    aca es llamamos al endpoin interno c:
-        respuesta = requests.get(
-            "http://citas:5000/disponibilidad", params=params, timeout=3
-        )
-        respuesta.raise_for_status()
 
-        datos = respuesta.json()
+@app.route("/usuarios/<int:id_usuario>", methods=["GET"])
+def obtenerUsuarioID(id_usuario):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Buscamos el usuario por su ID
+    cursor.execute(
+        "SELECT id_usuario, nombre_usuario, rol_usuario FROM usuarios WHERE id_usuario = %s",
+        (id_usuario,),
+    )
+    user = cursor.fetchone()
+    cursor.close()
+    conn.close()
 
+    if user:
         return (
             jsonify(
                 {
-                    "mensaje": "Consulta exitosa desde Autenticación",
-                    "datos_citas": datos,
+                    "id_usuario": user[0],
+                    "nombre_usuario": user[1],
+                    "rol_usuario": user[2],
                 }
             ),
             200,
         )
-
-    except requests.exceptions.RequestException as e:
-        #  manejo de errores
-        return (
-            jsonify(
-                {
-                    "Error": "Servicio de gestión de citas temporalmente no disponible.",
-                    "Detalle_tecnico": str(e),
-                }
-            ),
-            503,
-        )
+    else:
+        return jsonify({"error": "Usuario no encontrado"}), 404
 
 
 if __name__ == "__main__":
