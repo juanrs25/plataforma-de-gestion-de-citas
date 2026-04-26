@@ -4,7 +4,7 @@ import requests
 app = Flask(__name__)
 
 
-# RUTAS HACIA EL SERVICIO DE AUTENTICACIÓN
+# RUTAS HACIA EL SERVICIO AUTENTICACION
 
 
 @app.route("/usuarios/listar", methods=["GET"])
@@ -105,19 +105,26 @@ def citas_por_paciente():
 def consultar_disponibilidad():
     print("[Gateway] Consultando disponibilidad de doctores...", flush=True)
     id_doctor = request.args.get("id_doctor")
-    params = {"id_doctor": id_doctor} if id_doctor else {}
-
+    fecha = request.args.get("fecha")
+    params = {}
+    if id_doctor:
+        params["id_doctor"] = id_doctor
+    if fecha:
+        params["fecha"] = fecha
     try:
         response = requests.get(
             "http://citas:5000/disponibilidad", params=params, timeout=3
         )
         return jsonify(response.json()), response.status_code
+
     except requests.exceptions.ConnectionError:
         print(
-            "[Gateway] ¡ERROR! Servicio de citas caído o no responde al consultar disponibilidad",
+            "[Gateway] ¡ERROR! Servicio de citas caído al consultar disponibilidad",
             flush=True,
         )
         return jsonify({"error": "Servicio de citas no disponible"}), 503
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
