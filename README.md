@@ -166,7 +166,7 @@ volumes:
 ```
 ## Descripción básica de endpoints
 
-###API Gateway
+### API Gateway
 
 - GET /usuarios/listar → Lista usuarios  
 - POST /usuarios/registro → Registrar usuario  
