@@ -182,7 +182,8 @@ volumes:
 - GET /test-db → Verifica conexión a la base de datos  
 - POST /login → Autenticación de usuario  
 - POST /registro → Registro de usuario  
-- GET /listar → Lista usuarios  
+- GET /listar → Lista usuarios
+- GET /usuarios/id_usuario→ Consulta un usuario por ID
 
 ---
 
@@ -216,7 +217,7 @@ Para comprobar el estado:
 
 ## Notas
 - Si algún servicio no responde, verificar que todos los contenedores estén activos con `docker compose ps`.
-- En caso de errores, se recomienda revisar los logs con `docker compose logs`.
+- El API Gateway gestiona los errores cuando alguno de los servicios no está disponible o ocurre un fallo en la comunicación.
 - Las variables de entorno deben configurarse correctamente antes de ejecutar el sistema.
 -  No se recomienda subir el archivo `.env` al repositorio por seguridad.
 
