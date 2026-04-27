@@ -1,62 +1,48 @@
-
-# PROTOTIPO TÉCNICO - AVANCE CON MICROSERVICIOS
+# PROTOTIPO TÉCNICO INICIAL
 
 
 ## Información del Proyecto
 
 ### Descripción
-En este avance, el sistema evoluciona de un prototipo estático a una arquitectura de **microservicios**, utilizando **Docker** y **Docker Compose** para ejecutar cada servicio en contenedores independientes.
-
-Los servicios se comunican mediante **HTTP** (REST) y manejan la información en formato JSON. Además, se utilizan **variables de entorno** para gestionar configuraciones como credenciales y conexiones, lo que mejora la seguridad y permite modificar el entorno sin cambiar el código.
+Este proyecto contiene un **prototipo técnico inicial** que levanta **dos servicios web** usando **Docker Compose**.  
+Cada servicio expone una interfaz HTML estática servida por **Nginx** dentro de su contenedor.
 
 ### Servicios incluidos
-- **API Gateway**
-  - Punto de entrada principal
-  - Puerto: `5000`
+-  **Servicio de Autenticación**
+  - Páginas: `login.html`, `registro.html`
+  - Puerto: `8081`
+-  **Servicio de Historial**
+  - Página: `History.html`
+  - Puerto: `8082`
 
-- **Servicio de Autenticación**
-  - Registro, login y gestión de usuarios
-  - Puerto: `5001`
+---
 
-- **Servicio de Citas**
-  - Agendamiento, consulta de citas y disponibilidad
-  - Puerto: `5002`
+##  Estructura del proyecto
 
-- **Base de datos Autenticación**
-  - MySQL
-  - Puerto: `3307`
+    Sistemas_D
+    │ 
+    ├── Servicio-autenticacion
 
-- **Base de datos Citas**
-  - MySQL
-  - Puerto: `3308`
+    │   ├── Dockerfile
 
-## Estructura del proyecto
+    │   └── sitio
 
-    Avance Dos
-    │
-    ├── Citas medicas - avance dos
-    │   │
-    │   ├── Servicio-autenticacion
-    │   │   ├── db
-    │   │   │   └── db_autenticacion.sql
-    │   │   ├── app.py
-    │   │   ├── Dockerfile
-    │   │   └── requirements.txt
-    │   │
-    │   ├── Servicio-citas
-    │   │   ├── db
-    │   │   │   └── Citas_db.sql
-    │   │   ├── app.py
-    │   │   ├── Dockerfile
-    │   │   └── requirements.txt
-    │   │
-    │   ├── Servicio-gateway
-    │   │   ├── app.py
-    │   │   └── Dockerfile
-    |   |   └── requirements.txt
-    │   │
-    │   ├── docker-compose.yml
-    │   └── .env
+    │       ├── login.html
+
+    │       └── registro.html
+
+    ├── Servicio-historial
+
+    │   ├── Dockerfile
+
+    │   └── sitio
+
+    │       └── History.html
+
+    └── docker-compose.yml
+
+
+
 ---
 
 ## Requisitos
@@ -68,26 +54,13 @@ Antes de ejecutar el proyecto, asegúrate de tener instalado:
 
 ---
 
-
 ## Cómo ejecutar el proyecto
 
 ### 1) Ir a la carpeta raíz
 Ubícate en la carpeta donde está `docker-compose.yml`:
 
-### 2) Crear archivo `.env`
 
-Crear un archivo `.env` en la raíz del proyecto.
-
-Este archivo no está incluido en el repositorio por seguridad, ya que contiene configuraciones sensibles como credenciales.
-
-Ejemplo de variables que debes definir:
-
-- Variables de base de datos para autenticación  
-- Variables de base de datos para citas  
-- Contraseñas de MySQL  
-- Nombres de las bases de datos
-  
-### 3) Construir y levantar servicios
+### 2) Construir y levantar servicios
 Ejecuta:
 
 `docker compose up -d --build`
@@ -104,95 +77,35 @@ Ejecuta:
 
 Cuando todo esté arriba, abre en tu navegador:
 
-- **API Gateway:** `http://localhost:5000`
-- **Autenticacion:** `http://localhost:5001`
-- **Citas:** `http://localhost:5002`
+### Servicio de Autenticación
+- **Login:** `http://localhost:8081/login.html`
+- **Registro:** `http://localhost:8081/registro.html`
+
+### Servicio de Historial
+- **Historial:** `http://localhost:8082/History.html`
 
 ---
 
 ## Docker Compose (docker-compose.yml)
-```yaml
-services:
 
-  gateway:
-    build: ./Servicio-gateway
-    ports:
-      - "5000:5000"
-    depends_on:
-      - autenticacion
-      - citas
+    services:
 
-  autenticacion:
-    build: ./Servicio-autenticacion
-    ports:
-      - "5001:5000"
-    depends_on:
-      - db_autenticacion
-    env_file:
-      - .env
+      autenticacion:
 
-  db_autenticacion:
-    image: mysql:8.0
-    environment:
-      MYSQL_ROOT_PASSWORD: ${AUTH_MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${AUTH_MYSQL_DATABASE}
-    ports:
-      - "3307:3306"
-    volumes:
-      - db_auth_data:/var/lib/mysql
+        build: ./Servicio-autenticacion
 
-  citas:
-    build: ./Servicio-citas
-    ports:
-      - "5002:5000"
-    depends_on:
-      - db_citas
-    env_file:
-      - .env
+        ports:
 
-  db_citas:
-    image: mysql:8.0
-    environment:
-      MYSQL_ROOT_PASSWORD: ${CITA_MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${CITA_MYSQL_DATABASE}
-    ports:
-      - "3308:3306"
-    volumes:
-      - db_citas_data:/var/lib/mysql
+          - "8081:80"
 
-volumes:
-  db_auth_data:
-  db_citas_data:
-```
-## Descripción básica de endpoints
+      historial:
 
-###API Gateway
+        build: ./Servicio-historial
 
-- GET /usuarios/listar → Lista usuarios  
-- POST /usuarios/registro → Registrar usuario  
-- POST /usuarios/login → Iniciar sesión  
+        ports:
 
-- POST /citas/agendar → Crear cita  
-- GET /citas/paciente?id_paciente=1 → Consultar citas de un paciente  
-- GET /citas/disponibilidad?id_doctor=1 → Consultar disponibilidad 
+          - "8082:80"
 
-### Servicio de Autenticación
-
-- GET / → Estado del servicio  
-- GET /test-db → Verifica conexión a la base de datos  
-- POST /login → Autenticación de usuario  
-- POST /registro → Registro de usuario  
-- GET /listar → Lista usuarios  
-
----
-
-### Servicio de Citas
-
-- GET / → Estado del servicio  
-- GET /test-db → Verifica conexión a la base de datos  
-- POST /agendar → Crear cita  
-- GET /citas_paciente?id_paciente=1 → Consultar citas de un paciente  
-- GET /disponibilidad?id_doctor=1 → Consultar disponibilidad  
 
 ---
 
@@ -215,8 +128,7 @@ Para comprobar el estado:
 ---
 
 ## Notas
-- Si algún servicio no responde, verificar que todos los contenedores estén activos con `docker compose ps`.
-- En caso de errores, se recomienda revisar los logs con `docker compose logs`.
-- Las variables de entorno deben configurarse correctamente antes de ejecutar el sistema.
--  No se recomienda subir el archivo `.env` al repositorio por seguridad.
 
+- El servicio de autenticación expone el puerto **8081**
+- El servicio de historial expone el puerto **8082**
+- Los archivos HTML se sirven directamente desde **Nginx** dentro de cada contenedor
