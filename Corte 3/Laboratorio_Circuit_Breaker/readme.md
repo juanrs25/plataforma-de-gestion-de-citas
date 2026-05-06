@@ -13,12 +13,15 @@ R/ El sistema se protege. En lugar de insistir de manera infinita y quedarse esp
 ### Evidencias Fase 1
 
 Aquí muestro el pantallazo de cuando detuve el contenedor del backend:
+
 ![Deteniendo el backend](Evidencias/fase1-1.png)
 
 Y aquí se observan los logs mostrando cómo el circuito se abre después de los 3 fallos:
+
 ![Logs del Gateway con circuito abierto](Evidencias/fase1-2.png)
 
 Finalmente el mensaje que aparece cuando el circuito se a abierto:
+
 ![Mensaje final](Evidencias/fase1-3.png)
 
 FASE 2
@@ -32,13 +35,16 @@ En esta fase se implementó el patrón Circuit Breaker en el resto de los endpoi
 Para comprobar la independencia, en esta ocasión se detuvo únicamente el contenedor de **usuarios**, manteniendo el contenedor de mascotas (backend) activo.
 
 Al hacer 3 peticiones al endpoint `/usuarios`, se observa que el circuito se abre correctamente para este servicio:
+
 ![Usuarios circuito abierto](Evidencias/fase2-1.png)
 
 Sin embargo, al consultar el endpoint `/mascotas`, este sigue respondiendo y entregando la información sin problemas, demostrando que los circuitos están totalmente aislados:
+
 ![Mascotas funcionando bien](Evidencias/fase2-2.png)
 
 **Prueba del endpoint /resumen:**
 Al consultar el endpoint `/resumen` con el servicio de usuarios caído, el sistema detecta la falla de su dependencia y aborta la operación general, mostrando el mensaje unificado de caída:
+
 ![Resumen mostrando sistema caido](Evidencias/fase2-3.png)
 
 **Logs evidenciando el comportamiento:**
