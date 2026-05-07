@@ -243,10 +243,10 @@ def mascotasDos():
 @app.route("/mascotas/<int:id>")
 def obtener_mascota(id):
     print(f"[Gateway] Buscando mascota {id} en el backend...", flush=True)
-    # IMPORTANTE: Compartimos las mismas variables que el endpoint /mascotas
+    # se usan las mismas variables que el endpoint /mascotas por que son el mismo servicio
     global fallos_backend, circuito_abierto, ultimo_fallo_backend
 
-    # === LÓGICA HALF-OPEN ===
+    
     if circuito_abierto:
         tiempo_actual = time.time()
         tiempo_transcurrido = tiempo_actual - ultimo_fallo_backend
@@ -269,11 +269,11 @@ def obtener_mascota(id):
                 503,
             )
 
-    # === INTENTO DE CONEXIÓN ===
+    
     try:
         response = requests.get(f"http://backend:5000/mascotas/{id}", timeout=3)
 
-        # Si llegamos aquí, el backend respondió (ya sea un 200 o un 404)
+       
         if circuito_abierto:
             print(
                 "[Gateway] ¡Prueba por ID exitosa! El servicio de mascotas ya funciona",
