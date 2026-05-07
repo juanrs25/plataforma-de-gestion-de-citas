@@ -1,0 +1,23 @@
+docker ps
+
+docker exec -it pet_shop_db-1 bash
+
+MySQL -u root -p
+
+
+show databases;
+
+
+use app_db;
+
+create table mascotas(
+id int auto_increment primary key,
+nombre varchar(50),
+tipo varchar(50)
+);
+
+
+insert into mascotas(nombre, tipo)
+values ('Firulais', 'Perro');
+
+select * from mascotas;
