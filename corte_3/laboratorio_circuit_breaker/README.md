@@ -19,13 +19,13 @@
 ### Evidencias Fase 1
 
 - **Detención del contenedor:** Pantallazo de cuando se detuvo el contenedor del backend.
-  ![Deteniendo el backend](Evidencias/fase1-1.png)
+  ![Deteniendo el backend](evidencias/fase1-1.png)
 
 - **Apertura del circuito:** Logs mostrando cómo el circuito se abre después de los 3 fallos.
-  ![Logs del Gateway con circuito abierto](Evidencias/fase1-2.png)
+  ![Logs del Gateway con circuito abierto](evidencias/fase1-2.png)
 
 - **Mensaje al usuario:** Mensaje que aparece cuando el circuito se ha abierto.
-  ![Mensaje final](Evidencias/fase1-3.png)
+  ![Mensaje final](evidencias/fase1-3.png)
 
 ---
 
@@ -42,17 +42,17 @@ Además, se adaptó el endpoint `/resumen` para que, al depender de ambos servic
 - **Prueba de Independencia de Circuitos:**
   Para comprobar la independencia, se detuvo únicamente el contenedor de **usuarios**, manteniendo el contenedor de mascotas (backend) activo.
   - Al hacer 3 peticiones al endpoint `/usuarios`, el circuito se abre correctamente para este servicio:
-    ![Usuarios circuito abierto](Evidencias/fase2-1.png)
+    ![Usuarios circuito abierto](evidencias/fase2-1.png)
   - Sin embargo, al consultar el endpoint `/mascotas`, este sigue respondiendo y entregando la información sin problemas, demostrando un aislamiento total:
-    ![Mascotas funcionando bien](Evidencias/fase2-2.png)
+    ![Mascotas funcionando bien](evidencias/fase2-2.png)
 
 - **Prueba del endpoint `/resumen`:**
   Al consultar `/resumen` con el servicio de usuarios caído, el sistema detecta la falla de su dependencia y aborta la operación general:
-  ![Resumen mostrando sistema caido](Evidencias/fase2-3.png)
+  ![Resumen mostrando sistema caido](evidencias/fase2-3.png)
 
 - **Logs del comportamiento:**
   El Gateway registra los intentos fallidos hacia usuarios hasta abrir su circuito, mientras que las peticiones a mascotas se procesan con éxito:
-  ![Logs del Gateway en la Fase 2](Evidencias/fase2-4.png)
+  ![Logs del Gateway en la Fase 2](evidencias/fase2-4.png)
 
 ### 3. Análisis de la Fase 2
 
@@ -83,7 +83,7 @@ Además, se adaptó el endpoint `/resumen` para que, al depender de ambos servic
 
 > Si la petición de prueba falla, el Circuit Breaker asume que el servicio sigue inestable. Inmediatamente, **el circuito vuelve a estado "Abierto"** y el temporizador se reinicia. Si la prueba es exitosa, el circuito se "Cierra" completamente, los fallos vuelven a cero y el tráfico fluye con normalidad.
 
-![Diagrama de funcionamiento de half open](Evidencias/fase3-1.png)
+![Diagrama de funcionamiento de half open](evidencias/fase3-1.png)
 
 ---
 
@@ -103,11 +103,11 @@ Ademas de una variable de recuperacion (`tiempo_recuperacion`), el tiempo de esp
 ### Evidencias Fase 4
 
 - **Espera controlada (Rechazo inmediato):** El sistema rechaza las peticiones indicando los segundos restantes.
-  ![Espera controlada](Evidencias/fase4-1.png)
+  ![Espera controlada](evidencias/fase4-1.png)
 - **Prueba fallida (Apertura de circuito):** Tras 15 segundos, el backend seguía apagado. El intento falló y el circuito se volvió a abrir.
-  ![Prueba fallida vuelve a abrir](Evidencias/fase4-2.png)
+  ![Prueba fallida vuelve a abrir](evidencias/fase4-2.png)
 - **Prueba exitosa (Cierre y recuperación):** Se encendió el backend. La petición de prueba fue exitosa, el circuito se cerró y el servicio volvió a la normalidad.
-  ![Prueba exitosa circuito cerrado](Evidencias/fase4-3.png)
+  ![Prueba exitosa circuito cerrado](evidencias/fase4-3.png)
 
 ---
 
@@ -119,25 +119,25 @@ Se sometió el sistema a pruebas de estrés controladas en el endpoint `/mascota
 
 - **Descripción:** Todos los contenedores encendidos. El Gateway enruta sin problemas.
 - **Resultado esperado:** Código HTTP 200 y JSON con la lista de mascotas.
- ![Servicio funcionando](Evidencias/fase5-1.png)
+ ![Servicio funcionando](evidencias/fase5-1.png)
 
 **2. Escenario: Servicio caído (Fase de fallos)**
 
 - **Descripción:** Backend de mascotas apagado. El Gateway intenta conexión, espera el timeout (2s) y devuelve error (aún no se alcanza el límite de fallos).
 - **Resultado esperado:** Código HTTP 503. Logs muestran el conteo ("Fallo de conexión número 1").
- ![Servicio caido](Evidencias/fase5-2.png)
+ ![Servicio caido](evidencias/fase5-2.png)
 
 **3. Escenario: Circuito abierto**
 
 - **Descripción:** Se alcanza el tercer fallo consecutivo. El sistema entra en estado crítico y rechaza peticiones inmediatamente.
 - **Resultado esperado:** Error 503 instantáneo. Logs muestran _"Circuito ABIERTO. Rechazando. Faltan X segundos para probar de nuevo."_
- ![Circuito abierto](Evidencias/fase5-3.png)
+ ![Circuito abierto](evidencias/fase5-3.png)
 
 **4. Escenario: Recuperación del servicio (Self-Healing / MEDIO-ABIERTO)**
 
 - **Descripción:** Se enciende el backend y se espera el tiempo de enfriamiento (15s). El Gateway deja pasar una petición de prueba.
 - **Resultado esperado:** El circuito se cierra automáticamente. El cliente recibe HTTP 200. Logs muestran _"¡Prueba exitosa! El servicio ya funciona"_.
- ![Recuperacion del servicio](Evidencias/fase5-4.png)
+ ![Recuperacion del servicio](evidencias/fase5-4.png)
 
 ---
 
