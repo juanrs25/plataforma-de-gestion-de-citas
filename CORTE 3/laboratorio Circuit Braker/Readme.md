@@ -63,6 +63,61 @@ Cuando uno de los servicios falla, el otro puede continuar respondiendo normalme
 
 # Fase 3
 
+**1. ¿Qué significa “half-open”?**
+El estado half-open,  es una fase del Circuit Breaker  que ocurre después de que el circuito ha estado abierto por un tiempo.
+
+Cuando el circuito está abierto:
+- el sistema deja de enviar solicitudes al servicio caído.
+
+Sin embargo, despues de cierto tiempo:
+- el gateway realiza una pequeña prueba para verificar si el servicio ya volvió a funcionar.
+
+En ese momento de prueba es el estado half-open (medio abierto)
+
+**2. ¿Cuándo se vuelve a intentar una llamada?**
+La llamada se vuelve a intentar después de que pasa un tiempo de recuperación configurado por el sistema.
+
+**Por ejemplo:**
+- El circuito queda abierto 
+- El gateway espera 20 segundos
+- luego permite una nueva solicitud de prueba
+
+**Si el circuito funciona:**
+- El circuito se cierra nuevamente
+- El servicio vuelve a operar normalmente
+
+**3. ¿Qué pasa si el servicio vuelve a fallar?**
+Si después del tiempo de espera el sistema intenta nuevamente la conexión y el servicio sigue fallando:
+
+- La prueba falla
+- El circuito vuelve a abrirse completamente
+- El gateway continua bloqueando solicitudes
+
+Esto evita seguir enviando peticiones a un servidor que todavia no se ha recuperado.
+
+### **Ejemplo practico**
+
+**Servicio caido:**
+- Fallo 1
+- Fallo 2
+- Fallo 3
+- Circuito abierto
+
+**Espera 20 segundos**
+- El gateway intenta nuevamente hacer una solicitud
+
+**Caso 1: El servicio ya funciona**
+la peticion responde correctamente
+- Circuito cerrado
+- El circuito vuelve a la normalidad
+
+**Caso 2: El servicio sigue caido**
+La peticion vuelve a fallar
+- El circuito se abre otra vez
+- El gateway sigue bloqueando solicitudes
+
+
+
 
 
 
