@@ -231,4 +231,36 @@ Las validaciones realizadas demostraron que:
 - El estado HALF-OPEN permite verificar la recuperación del servicio.
 - El sistema puede volver automáticamente a un estado normal de funcionamiento.
 
+### Análisis final
+
+## ¿Qué cambió en el comportamiento del sistema?
+
+Antes de implementar el patrón :contentReference[oaicite:0]{index=0}, el gateway intentaba conectarse continuamente a los microservicios incluso cuando estos se encontraban caídos, generando múltiples errores y tiempos de espera innecesarios.
+
+Después de la implementación, el sistema puede detectar fallos consecutivos, abrir automáticamente el circuito y bloquear temporalmente las solicitudes hacia los servicios afectados. Además, con el estado HALF-OPEN el gateway puede verificar automáticamente si el servicio ya se recuperó y restaurar su funcionamiento normal.
+
+Esto mejoró la tolerancia a fallos, la estabilidad y la disponibilidad parcial del sistema.
+
+---
+
+## ¿Qué decisiones tomaron en la implementación?
+
+Durante la implementación se decidió:
+- manejar un contador de fallos independiente por cada microservicio.
+- abrir el circuito de forma individual para evitar afectar otros servicios disponibles.
+- implementar el estado HALF-OPEN para permitir la recuperación automática del sistema.
+- agregar mensajes y logs descriptivos para comprender fácilmente el estado del circuito durante las pruebas.
+- mantener el endpoint `/listar` funcionando parcialmente aunque alguno de los servicios falle.
+
+Estas decisiones permitieron construir un sistema más resiliente y fácil de monitorear.
+
+---
+
+## ¿Qué dificultades encontraron?
+
+Una de las principales dificultades fue manejar correctamente los estados del Circuit Breaker y coordinar la transición entre CLOSED, OPEN y HALF-OPEN.
+
+También fue necesario ajustar la lógica de recuperación para que los mensajes en los logs reflejaran correctamente cuándo el servicio realmente se recuperaba. Además, se presentaron pruebas donde el circuito debía volver a abrirse cuando el servicio seguía fallando durante el estado HALF-OPEN.
+
+Finalmente, fue importante validar cuidadosamente cada escenario para comprobar que el gateway respondiera correctamente tanto en condiciones normales como durante fallos y recuperaciones.
 
