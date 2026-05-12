@@ -116,6 +116,100 @@ La peticion vuelve a fallar
 - El circuito se abre otra vez
 - El gateway sigue bloqueando solicitudes
 
+# Fase 4
+En la Fase 4 se implementó el mecanismo de recuperación del Circuit Breaker usando el estado Half-Open.
+
+El sistema:
+- Abre el circuito despues de varios fallos consecutivos
+- Espera un tiempo definido anter de volver a intentar (10 segunodos)
+- Realiza una prueba de conexion al servicio
+
+Segun el resultado:
+- Cierra el circuito si el servicio responde correctamente
+- O vuelve a abrirlo si el servicio continua fallando
+
+Para implementar la Fase 4 se utilizaron variables globales para controlar el tiempo de espera y el estado Half-Open del circuito:
+
+**Para Mascotas:**
+- `tiempo_espera`
+- `momento_apertura`
+- `half_open`
+
+**Para usuarios:**
+- `tiempo_espera_usuarios`
+- `momento_apertura_usuarios`
+- `half_open_usuarios `
+
+### Evidencias
+
+1. El sistema intenta conectarse al servicio mascotas y ocurren fallos consecutivos
+
+2. Despues del tercer fallo, el Circuit Breaker abre el circuito para evitar seguir enviando solicitudes al servicio caido
+- **Circuito abierto**
+
+3. luego de esperar el tiempo de recuperacion configurado, el sistema pasa al estado Half-open para realizar prueba de conexion
+
+- **Pasando Half-open**
+
+4. la primera prueba fallo porque el servicio todavia sigue caido, por lo que el circuito volvio a abrirse
+
+- **Fallo numero 4 Half-open fallo- circuito abierto nuevamente**
+
+5. Despues de una nueva espera,el sistema volvió a entrar en Half-Open y realizó otra prueba:
+
+- **Pasando Half-open**
+
+6. Esta vez el servicio si respondio correctamente, por lo que el circuito se cerró nuevamente y el sistema volvió a operar con normalidad:
+
+![Logs Half-open mascotas](Evidencias/Fase4_1.png)
+
+Aqui se muestra cómo el Circuit Breaker del servicio de usuarios abre el circuito después de varios fallos, rechaza solicitudes mientras está en estado OPEN, pasa a HALF-OPEN para probar la conexión y finalmente cierra el circuito cuando el servicio se recupera.
+
+![Logs Half-open mascotas](Evidencias/Fase4_2.png)
+
+### Fase 5
+Para validar el sistema se utilizo el endpoint `usuarios` probando los diferentes escenarios
+
+1. **Servicio funcionando**
+Se observa el funcionamiento normal del servicio de usuarios, respondiendo correctamente con código HTTP 200
+
+![Evidencias F5](Evidencias/Fasee5_1.png)
+
+2. **Servicio Caido**
+Se muestra el primer fallo del servicio de usuarios, donde el gateway registra el error y responde con código 503.
+
+![Evidencias F5](Evidencias/Fase5_2.png)
+
+3. **Circuito abierto**
+Se observan múltiples fallos consecutivos del servicio de usuarios hasta que el Circuit Breaker abre el circuito para evitar más intentos de conexión.
+
+![Evidencias F5](Evidencias/Fase5_3.png)
+
+4. **Recuperacion del servicio**
+Se muestra el estado Half-Open, donde el sistema realiza una prueba de recuperación y, al responder correctamente el servicio, el circuito vuelve a cerrarse.
+
+![Evidencias F5](Evidencias/Fase5_4.png)
+
+## **Analisis final**
+
+**Que cambio en el comportamiento del sistema?**
+El sistema ahora es más estable frente a fallos de los servicios. Antes, el gateway seguía intentando conectarse aunque el servicio estuviera caído, generando más errores y retrasos. Con la implementación del Circuit Breaker, el sistema detecta varios fallos consecutivos, deja de enviar solicitudes temporalmente y espera un tiempo antes de volver a intentar la conexión.
+
+**Que decisiones se tomaron en la implementacion?**
+Se decidió implementar un contador de fallos para detectar cuándo un servicio estaba fallando repetidamente. También se agregó un tiempo de espera para evitar intentos constantes de conexión y se utilizó el estado Half-Open para probar si el servicio ya se había recuperado antes de volver a cerrar el circuito completamente.
+
+**Que dificultades se encontraron?**
+Una de las principales dificultades fue entender el comportamiento de los estados del Circuit Breaker, especialmente el estado Half-Open y cuándo el circuito debía volver a abrirse. También hubo confusión al interpretar los logs y las solicitudes que aparecían en consola, además de manejar correctamente las rutas, variables globales y tiempos de recuperación durante las pruebas.
+
+
+
+
+
+
+
+
+
+
 
 
 
