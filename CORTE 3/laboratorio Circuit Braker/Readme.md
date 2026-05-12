@@ -170,22 +170,26 @@ Aqui se muestra cómo el Circuit Breaker del servicio de usuarios abre el circui
 ### Fase 5
 Para validar el sistema se utilizo el endpoint `usuarios` probando los diferentes escenarios
 
-1. **Servicio funcionando**
+1. **Servicio funcionando:**
+
 Se observa el funcionamiento normal del servicio de usuarios, respondiendo correctamente con código HTTP 200
 
 ![Evidencias F5](Evidencias/Fasee5_1.png)
 
-2. **Servicio Caido**
+2. **Servicio Caido:**
+
 Se muestra el primer fallo del servicio de usuarios, donde el gateway registra el error y responde con código 503.
 
 ![Evidencias F5](Evidencias/Fase5_2.png)
 
-3. **Circuito abierto**
+3. **Circuito abierto:**
+
 Se observan múltiples fallos consecutivos del servicio de usuarios hasta que el Circuit Breaker abre el circuito para evitar más intentos de conexión.
 
 ![Evidencias F5](Evidencias/Fase5_3.png)
 
-4. **Recuperacion del servicio**
+4. **Recuperacion del servicio:**
+
 Se muestra el estado Half-Open, donde el sistema realiza una prueba de recuperación y, al responder correctamente el servicio, el circuito vuelve a cerrarse.
 
 ![Evidencias F5](Evidencias/Fase5_4.png)
@@ -193,12 +197,15 @@ Se muestra el estado Half-Open, donde el sistema realiza una prueba de recuperac
 ## **Analisis final**
 
 **Que cambio en el comportamiento del sistema?**
+
 El sistema ahora es más estable frente a fallos de los servicios. Antes, el gateway seguía intentando conectarse aunque el servicio estuviera caído, generando más errores y retrasos. Con la implementación del Circuit Breaker, el sistema detecta varios fallos consecutivos, deja de enviar solicitudes temporalmente y espera un tiempo antes de volver a intentar la conexión.
 
 **Que decisiones se tomaron en la implementacion?**
+
 Se decidió implementar un contador de fallos para detectar cuándo un servicio estaba fallando repetidamente. También se agregó un tiempo de espera para evitar intentos constantes de conexión y se utilizó el estado Half-Open para probar si el servicio ya se había recuperado antes de volver a cerrar el circuito completamente.
 
 **Que dificultades se encontraron?**
+
 Una de las principales dificultades fue entender el comportamiento de los estados del Circuit Breaker, especialmente el estado Half-Open y cuándo el circuito debía volver a abrirse. También hubo confusión al interpretar los logs y las solicitudes que aparecían en consola, además de manejar correctamente las rutas, variables globales y tiempos de recuperación durante las pruebas.
 
 
