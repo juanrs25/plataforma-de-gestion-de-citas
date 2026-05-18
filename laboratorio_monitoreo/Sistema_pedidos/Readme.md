@@ -95,7 +95,7 @@ Esto facilita la observabilidad y el monitoreo del sistema distribuido.
 
 # Captura — Logs del sistema
 
-<img width="1062" height="407" alt="image" src="https://github.com/user-attachments/assets/34ea5bc0-33a8-48e1-b23c-205951108be1" />
+<img width="1469" height="697" alt="image" src="https://github.com/user-attachments/assets/85413425-cea4-4eb8-9aed-0f1033b27067" />
 
 
 
@@ -175,7 +175,8 @@ Estos endpoints son fundamentales en sistemas distribuidos para supervisar el fu
 ---
 
 # Captura — Health Checks funcionando
-<img width="1366" height="695" alt="image" src="https://github.com/user-attachments/assets/7bf8f0bc-0f40-453b-9c31-c6081880f1b5" />
+<img width="980" height="123" alt="image" src="https://github.com/user-attachments/assets/7e5b26d0-9293-4f93-b46e-b1a73df2fd41" />
+
 
 ---
 # FASE 3 — Monitoreo
@@ -220,7 +221,8 @@ El gateway también registró el tiempo que tardó cada servicio en responder.
 
 # Captura — Monitoreo y tiempos de respuesta
 
-<img width="1196" height="430" alt="image" src="https://github.com/user-attachments/assets/178b8601-0cfa-4226-871e-fc6ac3d59da7" />
+<img width="972" height="311" alt="image" src="https://github.com/user-attachments/assets/aacefe9c-999d-4c9b-b476-ce2cfe430341" />
+
 
 ---
 
@@ -282,10 +284,12 @@ El gateway detectó correctamente que el servicio no estaba disponible y respond
 
 # Captura — Servicio pagos caído
 
-<img width="658" height="226" alt="image" src="https://github.com/user-attachments/assets/349c9c49-2690-46bf-9728-f081bdc80121" />
+<img width="667" height="217" alt="image" src="https://github.com/user-attachments/assets/93102368-9c40-4119-aee7-c3d5f7a4e5c8" />
+
 
 # Captura — Servicio logs servicio de pagos caido
-<img width="1832" height="111" alt="image" src="https://github.com/user-attachments/assets/bf622d32-1092-457c-8999-9e1946e7787e" />
+<img width="1463" height="190" alt="image" src="https://github.com/user-attachments/assets/2360d49d-fea4-48db-a2b6-84d880606a68" />
+
 
 
 
@@ -315,26 +319,31 @@ A pesar de que el servicio `pagos` fue apagado, los demás servicios continuaron
 /inventario
 ```
 ## Captura servicio inventario y pedidos funcionando correctamente
-<img width="789" height="259" alt="image" src="https://github.com/user-attachments/assets/80ad6394-75a4-40e4-9457-676d8016ed4f" />
-<img width="716" height="209" alt="image" src="https://github.com/user-attachments/assets/645be3b2-bd2f-432a-96cc-fa173d8fe2c1" />
+<img width="674" height="178" alt="image" src="https://github.com/user-attachments/assets/87d0791b-3a3a-4164-b3b6-46735ff7a8b1" />
+
+<img width="649" height="165" alt="image" src="https://github.com/user-attachments/assets/0a62721a-a113-4140-b7fd-3c62aaa21b25" />
+
 
 
 ### Captura Logs obtenidos con pagos caido y los demas servicios disponibles
-<img width="1870" height="360" alt="image" src="https://github.com/user-attachments/assets/a4688ede-a68e-433d-a9b0-558fc2bd914b" />
+<img width="1466" height="414" alt="image" src="https://github.com/user-attachments/assets/0f4b7b88-b8aa-4572-930f-4554cde72df5" />
+
 
 
 ---
 
 # Captura — Servicio inventario funcionando
 
-<img width="685" height="611" alt="image" src="https://github.com/user-attachments/assets/ab76b6f2-e0a7-40d9-be16-797ffba58980" />
+<img width="676" height="529" alt="image" src="https://github.com/user-attachments/assets/75984275-d93c-4dbb-98fd-701f1a85997f" />
+
 
 
 ---
 
 # Captura — Servicio pedidos funcionando
 
-<img width="716" height="722" alt="image" src="https://github.com/user-attachments/assets/aa84783e-8098-41e9-8931-63c8d76096fb" />
+<img width="661" height="570" alt="image" src="https://github.com/user-attachments/assets/0890db80-68b0-4f74-a262-8af866db8871" />
+
 
 
 ---
@@ -429,7 +438,9 @@ tiempo_respuesta = fin - inicio
 
 ---
 ### Captura de los tiempos de respuesta
-<img width="1196" height="430" alt="image" src="https://github.com/user-attachments/assets/178b8601-0cfa-4226-871e-fc6ac3d59da7" />
+
+<img width="1356" height="399" alt="image" src="https://github.com/user-attachments/assets/49a96163-d5c0-410f-a2dd-5052afa732ee" />
+
 ---
 
 # Análisis de tiempos de respuesta
@@ -449,7 +460,8 @@ Durante las pruebas, los servicios respondieron en tiempos bajos, indicando una 
 El sistema también registró errores cuando un microservicio no estuvo disponible.
 
 ## Captura Microservicio no disponible 
-<img width="1196" height="430" alt="image" src="https://github.com/user-attachments/assets/178b8601-0cfa-4226-871e-fc6ac3d59da7" />
+<img width="1448" height="190" alt="image" src="https://github.com/user-attachments/assets/bab4d3d2-f59c-4006-b316-851858defa1d" />
+
 
 
 # Análisis de errores
@@ -458,7 +470,7 @@ Los logs permitieron identificar:
 
 - servicios caídos
 - errores de conexión
-- fallos de comunicación
+- Numero de fallos de comunicación
 - respuestas HTTP de error
 
 Cuando el servicio `pagos` fue apagado, el gateway detectó correctamente la falla y devolvió un código HTTP `503 Service Unavailable`.
