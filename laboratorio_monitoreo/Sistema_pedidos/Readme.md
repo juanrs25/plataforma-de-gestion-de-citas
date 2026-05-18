@@ -284,11 +284,14 @@ El gateway detectó correctamente que el servicio no estaba disponible y respond
 
 # Captura — Servicio pagos caído
 
-<img width="667" height="217" alt="image" src="https://github.com/user-attachments/assets/93102368-9c40-4119-aee7-c3d5f7a4e5c8" />
+<img width="680" height="219" alt="image" src="https://github.com/user-attachments/assets/3ac4cf58-2fe3-4c4d-a729-2fac79f13bda" />
+
 
 
 # Captura — Servicio logs servicio de pagos caido
-<img width="1463" height="190" alt="image" src="https://github.com/user-attachments/assets/2360d49d-fea4-48db-a2b6-84d880606a68" />
+
+<img width="1459" height="194" alt="image" src="https://github.com/user-attachments/assets/e2a1a61f-f93c-433e-b75a-6548999469b1" />
+
 
 
 
