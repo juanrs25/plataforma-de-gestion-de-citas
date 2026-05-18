@@ -67,8 +67,6 @@ def crear_cita():
     cursor = conn.cursor()
 
     try:
-
-        
         # VALIDAR SI EL DOCTOR YA TIENE UNA CITA EN ESA HORA
         cursor.execute(
             """
@@ -88,7 +86,6 @@ def crear_cita():
             return jsonify({
                 "Error": "El doctor ya tiene una cita agendada en ese horario"
             }), 409
-
         
         # CREAR LA CITA
         
