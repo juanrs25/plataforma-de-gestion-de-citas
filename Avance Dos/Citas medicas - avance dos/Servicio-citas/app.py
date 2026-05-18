@@ -396,5 +396,4 @@ def reprogramar_cita(id_citas):
 
 
 if __name__ == "__main__":
-    print("hola mundo")
     app.run(host="0.0.0.0", port=5000, debug=True)
