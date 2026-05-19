@@ -1,1 +1,29 @@
+# Ignorar archivos sensibles
 Avance Dos/Citas medicas - avance dos/.env
+
+# Ignorar carpetas personales y de prácticas
+Corte3/
+Docker_compose_practica/
+TALLER-PRACTICA-DOCKER COMPOSE/
+laboratorio_monitoreo/
+sistemas_D/
+
+# Ignorar archivos sueltos que no deben ir al proyecto principal
+Practica 4.docx
+Practica-SD.pdf
+_Diagrama de flujo.png
+index.html
+
+# Ignorar archivos temporales y de sistema
+*.log
+*.tmp
+*.swp
+*.DS_Store
+Thumbs.db
+
+# Ignorar entornos virtuales y dependencias
+venv/
+node_modules/
+__pycache__/
+
+Proyecto_Final/.env
