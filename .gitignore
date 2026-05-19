@@ -25,3 +25,5 @@ Thumbs.db
 venv/
 node_modules/
 __pycache__/
+
+Proyecto_Final/.env
