@@ -7,7 +7,7 @@ import pika  # NUEVO: Importamos pika para RabbitMQ
 import json  # NUEVO: Para convertir diccionarios a texto JSON
 
 app = Flask(__name__)
-
+#.
 
 def get_db_connection():
     return mysql.connector.connect(
