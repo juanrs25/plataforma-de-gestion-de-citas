@@ -146,6 +146,18 @@ def conectar_y_escuchar():
             flush=True,
         )
 
+@app.route("/health")
+def health():
+
+    print(
+        "Health check solicitado en historial",
+        flush=True
+    )
+
+    return {
+        "status": "ok",
+        "servicio": "Historial"
+    }
 
 # Lanzamos el escuchador
 hilo_rabbitmq = threading.Thread(target=conectar_y_escuchar)

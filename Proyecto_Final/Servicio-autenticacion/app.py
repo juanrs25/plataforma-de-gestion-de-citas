@@ -40,37 +40,60 @@ def test_db():
 
 @app.route("/login", methods=["POST"])
 def login_user():
+
     data = request.json
+
     correo_usuario = data.get("correo_usuario")
     password_usuario = data.get("password_usuario")
+
     Connection = get_db_connection()
     cursor = Connection.cursor()
+
     cursor.execute(
         "SELECT * FROM usuarios WHERE correo_usuario = %s AND password_usuario = %s",
         (correo_usuario, password_usuario),
     )
+
     user = cursor.fetchone()
+
     cursor.close()
     Connection.close()
 
     if user:
+
+        print(
+            f'Usuario "{user[1]}" inicio sesion correctamente',
+            flush=True
+        )
+
         return {"Exitoso": "Login exitoso"}
+
     else:
+
+        print(
+            "Error al iniciar sesion, revise las credenciales de su registro",
+            flush=True
+        )
+
         return {"Error": "Credenciales erroneas"}, 401
 
 
 @app.route("/registro", methods=["POST"])
 def register_user():
+
     data = request.json
+
     nombre_usuario = data.get("nombre_usuario")
     password_usuario = data.get("password_usuario")
     correo_usuario = data.get("correo_usuario")
     telefono_usuario = data.get("telefono_usuario")
     direccion_usuario = data.get("direccion_usuario")
+
     Connection = get_db_connection()
     cursor = Connection.cursor()
 
     try:
+
         cursor.execute(
             "INSERT INTO usuarios (nombre_usuario, password_usuario,correo_usuario, telefono_usuario,direccion_usuario) VALUES (%s, %s, %s, %s,%s)",
             (
@@ -81,11 +104,27 @@ def register_user():
                 direccion_usuario,
             ),
         )
+
         Connection.commit()
+
+        print(
+            f'Usuario "{nombre_usuario}" registrado correctamente',
+            flush=True
+        )
+
         return {"Exitoso": "Usuario registrado exitosamente"}
+
     except Exception as e:
+
+        print(
+            f'Error al registrar usuario "{nombre_usuario}": {e}',
+            flush=True
+        )
+
         return {"Error": str(e)}, 400
+
     finally:
+
         cursor.close()
         Connection.close()
 
@@ -138,6 +177,19 @@ def obtenerUsuarioID(id_usuario):
         )
     else:
         return jsonify({"error": "Usuario no encontrado"}), 404
+    
+@app.route("/health")
+def health():
+
+    print(
+        "Health check solicitado en autenticacion",
+        flush=True
+    )
+
+    return {
+        "status": "ok",
+        "servicio": "Autenticacion"
+    }
 
 
 if __name__ == "__main__":
