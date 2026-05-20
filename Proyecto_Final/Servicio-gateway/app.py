@@ -1,10 +1,24 @@
+from time import time
+
 from flask import Flask, request, jsonify
 import requests
 
 app = Flask(__name__)
 
+fallos_health_citas = 0
+fallos_health_autenticacion = 0
+fallos_health_historial = 0
+
+servicios = {
+    "Autenticacion": "http://autenticacion:5000/health",
+    "Citas": "http://citas:5000/health",
+    "Historial": "http://historial:5000/health"
+}
 #.
 # RUTAS HACIA EL SERVICIO AUTENTICACION
+@app.route("/")
+def home():
+    return "API FUNCIONANDO"
 
 
 @app.route("/usuarios/listar", methods=["GET"])
@@ -125,7 +139,281 @@ def consultar_disponibilidad():
         return jsonify({"error": "Servicio de citas no disponible"}), 503
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@app.route("/estado/autenticacion", methods=["GET"])
+def estado_autenticacion():
 
+    global fallos_health_autenticacion
+
+    print(
+        "Solicitud de health check para autenticación recibida",
+        flush=True
+    )
+    
+
+    inicio = time()
+
+    try:
+
+        response = requests.get(
+            "http://autenticacion:5000/health",
+            timeout=2
+        )
+
+        print(
+            "Servicio autenticacion disponible",
+            flush=True
+        )
+
+        print(
+            f"Codigo HTTP: {response.status_code}",
+            flush=True
+        )
+
+        # reiniciar contador si funciona
+        fallos_health_autenticacion = 0
+
+        return jsonify(response.json())
+
+    except Exception as e:
+
+        # aumentar contador
+        fallos_health_autenticacion += 1
+
+        print(
+            f"Servicio autenticacion caido: {e}",
+            flush=True
+        )
+
+        print(
+            f"Cantidad de fallos health autenticacion: {fallos_health_autenticacion}",
+            flush=True
+        )
+
+        return jsonify({
+            "status": "Caido",
+            "service": "Autenticacion"
+        }), 503
+
+    finally:
+
+        fin = time()
+
+        print(
+            f"[INFO] Tiempo de respuesta Autenticacion: {fin - inicio:.4f} segundos",
+            flush=True
+        )
+
+@app.route("/estado/citas", methods=["GET"])
+def estado_citas():
+
+    global fallos_health_citas
+
+    print(
+        "Solicitud de health check para citas recibida",
+        flush=True
+    )
+    
+
+    inicio = time()
+
+    try:
+
+        response = requests.get(
+            "http://citas:5000/health",
+            timeout=2
+        )
+
+        print(
+            "Servicio citas disponible",
+            flush=True
+        )
+
+        print(
+            f"Codigo HTTP: {response.status_code}",
+            flush=True
+        )
+
+        # reiniciar contador si funciona
+        fallos_health_citas = 0
+
+        return jsonify(response.json())
+
+    except Exception as e:
+
+        # aumentar contador
+        fallos_health_citas += 1
+
+        print(
+            f"Servicio citas caido: {e}",
+            flush=True
+        )
+
+        print(
+            f"Cantidad de fallos health citas: {fallos_health_citas}",
+            flush=True
+        )
+
+        return jsonify({
+            "status": "Caido",
+            "service": "Citas"
+        }), 503
+
+    finally:
+
+        fin = time()
+
+        print(
+            f"[INFO] Tiempo de respuesta Citas: {fin - inicio:.4f} segundos",
+            flush=True
+        )
+
+@app.route("/estado/historial", methods=["GET"])
+def estado_historial():
+
+    global fallos_health_historial
+
+    print(
+        "Solicitud de health check para historial recibida",
+        flush=True
+    )
+    
+
+    inicio = time()
+
+    try:
+
+        response = requests.get(
+            "http://historial:5000/health",
+            timeout=2
+        )
+
+        print(
+            "Servicio historial disponible",
+            flush=True
+        )
+
+        print(
+            f"Codigo HTTP: {response.status_code}",
+            flush=True
+        )
+
+        # reiniciar contador si funciona
+        fallos_health_historial = 0
+
+        return jsonify(response.json())
+
+    except Exception as e:
+
+        # aumentar contador
+        fallos_health_historial += 1
+
+        print(
+            f"Servicio historial caido: {e}",
+            flush=True
+        )
+
+        print(
+            f"Cantidad de fallos health historial: {fallos_health_historial}",
+            flush=True
+        )
+
+        return jsonify({
+            "status": "Caido",
+            "service": "Historial"
+        }), 503
+
+    finally:
+
+        fin = time()
+
+        print(
+            f"[INFO] Tiempo de respuesta Historial: {fin - inicio:.4f} segundos",
+            flush=True
+        )
+
+
+@app.route("/monitoreo", methods=["GET"])
+def monitoreo():
+
+    print(
+        "[MONITOREO] Verificando estado de microservicios...",
+        flush=True
+    )
+
+    estados = {}
+
+    servicios_ok = []
+    servicios_caidos = []
+
+    for nombre_servicio, url in servicios.items():
+
+        inicio = time()
+
+        try:
+
+            response = requests.get(
+                url,
+                timeout=2
+            )
+
+            fin = time()
+
+            tiempo = f"{fin - inicio:.4f} segundos"
+
+            estados[nombre_servicio] = {
+                "status": "OK",
+                "codigo_http": response.status_code,
+                "tiempo_respuesta": tiempo
+            }
+
+            servicios_ok.append(nombre_servicio)
+
+            print(
+                f"{nombre_servicio} funcionando correctamente",
+                flush=True
+            )
+
+            print(
+                f"Tiempo de respuesta {nombre_servicio}: {tiempo}",
+                flush=True
+            )
+
+        except Exception as e:
+
+            estados[nombre_servicio] = {
+                "status": "Caido",
+                "error": "Servicio no responde"
+            }
+
+            servicios_caidos.append(nombre_servicio)
+
+            print(
+                f"Servicio {nombre_servicio} no disponible",
+                flush=True
+            )
+    # resumen final
+
+    if len(servicios_caidos) == 0:
+
+        print(
+            "Todos los servicios OK",
+            flush=True
+        )
+
+    else:
+
+        print(
+            f"Servicios caidos: {', '.join(servicios_caidos)}",
+            flush=True
+        )
+
+        print(
+            f"Servicios OK: {', '.join(servicios_ok)}",
+            flush=True
+        )
+
+    return jsonify(estados)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

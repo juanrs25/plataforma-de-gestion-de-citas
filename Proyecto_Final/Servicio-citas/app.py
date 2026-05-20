@@ -489,6 +489,19 @@ def reprogramar_cita(id_citas):
         cursor.close()
         conn.close()
 
+@app.route("/health")
+def health():
+
+    print(
+        "Health check solicitado en citas",
+        flush=True
+    )
+
+    return {
+        "status": "ok",
+        "servicio": "Citas"
+    }
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
