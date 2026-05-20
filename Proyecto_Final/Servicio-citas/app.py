@@ -3,10 +3,13 @@ import mysql.connector
 import os
 import requests
 from datetime import date
-import pika  # NUEVO: Importamos pika para RabbitMQ
-import json  # NUEVO: Para convertir diccionarios a texto JSON
+import pika
+import json
 
 app = Flask(__name__)
+
+
+# CONFIGURACION DE BASE DE DATOS
 
 
 def get_db_connection():
@@ -18,8 +21,8 @@ def get_db_connection():
     )
 
 
+# LOGICA DE RABBITMQ
 
-# FUNCION PARA EMITIR EVENTOS
 
 def publicar_evento(id_usuario, id_cita, accion, detalles=""):
     try:
@@ -29,8 +32,9 @@ def publicar_evento(id_usuario, id_cita, accion, detalles=""):
         )
         canal = conexion.channel()
 
-    
+        # Declaramos ambas colas para asegurar que existan en RabbitMQ
         canal.queue_declare(queue="eventos_citas", durable=True)
+        canal.queue_declare(queue="eventos_notificaciones", durable=True)
 
         evento = {
             "id_usuario": id_usuario,
@@ -38,33 +42,55 @@ def publicar_evento(id_usuario, id_cita, accion, detalles=""):
             "accion": accion,
             "detalles": detalles,
         }
+        mensaje_json = json.dumps(evento)
 
+        # Envio a la cola de Historial
         canal.basic_publish(
             exchange="",
             routing_key="eventos_citas",
-            body=json.dumps(evento),
+            body=mensaje_json,
             properties=pika.BasicProperties(
-                delivery_mode=2,  
+                delivery_mode=2,
             ),
         )
+
+        # Envio a la cola de Notificaciones
+        canal.basic_publish(
+            exchange="",
+            routing_key="eventos_notificaciones",
+            body=mensaje_json,
+            properties=pika.BasicProperties(
+                delivery_mode=2,
+            ),
+        )
+
         print(
-            f"[RABBITMQ] Evento disparado: {accion} para la cita {id_cita}", flush=True
+            f"[SERVICIO-CITAS] [RABBITMQ] Evento  disparado disparado tambien a: {accion} para la cita {id_cita}",
+            flush=True,
         )
         conexion.close()
     except Exception as e:
         print(
-            f"[RABBITMQ-ERROR] Error al publicar evento en RabbitMQ: {str(e)}",
+            f"[SERVICIO-CITAS] [RABBITMQ-ERROR] Error al publicar evento en RabbitMQ: {str(e)}",
             flush=True,
         )
 
 
+# ENDPOINTS ----------------------------------------------------------------------------
+
+
 @app.route("/")
 def Inicio():
+    print("[SERVICIO-CITAS] Solicitud recibida en endpoint raíz (/)", flush=True)
     return "Servicio de citas funcionando correctamente"
 
 
 @app.route("/test-db")
 def test_db():
+    print(
+        "[SERVICIO-CITAS] Solicitud recibida para prueba de base de datos (/test-db)",
+        flush=True,
+    )
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -74,18 +100,22 @@ def test_db():
         cursor.close()
         conn.close()
 
+        print("[SERVICIO-CITAS] Prueba de BD exitosa", flush=True)
         return f"Conexión exitosa bd de citas: {result}"
     except Exception as e:
+        print(f"[SERVICIO-CITAS] Error en prueba de BD: {str(e)}", flush=True)
         return f"Error de conexión: {str(e)}"
 
 
 @app.route("/agendar", methods=["POST"])
 def crear_cita():
-    print("[SERVICIO-CITAS] Solicitud recibida para crear una cita", flush=True)
+    print(
+        "[SERVICIO-CITAS] Solicitud recibida para crear una cita (/agendar)", flush=True
+    )
     data = request.get_json()
 
     if not data.get("id_paciente_citas") or not data.get("id_doctor_citas"):
-        print("[SERVICIO-CITAS] Error: Datos obligatorios faltantes", flush=True)
+        print("[SERVICIO-CITAS] Error: Datos obligatorios faltantes (IDs)", flush=True)
         return jsonify({"Error": "Los IDs del paciente y doctor son obligatorios"}), 400
 
     paciente = data.get("id_paciente_citas")
@@ -95,7 +125,7 @@ def crear_cita():
     hora_cita = data.get("hora_programacion_citas")
 
     if not fecha_cita or not hora_cita:
-        print("[SERVICIO-CITAS]Error: Fecha u hora no enviadas", flush=True)
+        print("[SERVICIO-CITAS] Error: Fecha u hora no enviadas", flush=True)
         return jsonify({"Error": "La fecha y hora de la cita son obligatorias"}), 400
 
     conn = get_db_connection()
@@ -142,11 +172,14 @@ def crear_cita():
         )
 
         conn.commit()
-        id_nueva_cita = cursor.lastrowid 
+        id_nueva_cita = cursor.lastrowid
 
-        print("[SERVICIO-CITAS] Cita creada correctamente", flush=True)
+        print(
+            f"[SERVICIO-CITAS] Cita {id_nueva_cita} creada correctamente en BD",
+            flush=True,
+        )
 
-        #  DISPARAMOS EL EVENTO 
+        # DISPARAMOS EL EVENTO
         publicar_evento(
             id_usuario=paciente,
             id_cita=id_nueva_cita,
@@ -154,21 +187,25 @@ def crear_cita():
             detalles=f"Cita programada para el {fecha_cita} a las {hora_cita}",
         )
 
-        return jsonify({"mensaje": "Cita creada correctamente"}), 201
+        return (
+            jsonify({"mensaje": "Cita creada correctamente", "id_cita": id_nueva_cita}),
+            201,
+        )
 
     except Exception as e:
         print(f"[SERVICIO-CITAS] Error al crear la cita: {str(e)}", flush=True)
         return jsonify({"Error": str(e)}), 500
-
     finally:
-        print("[SERVICIO-CITAS] Conexión con base de datos cerrada", flush=True)
         cursor.close()
         conn.close()
 
 
 @app.route("/citas_paciente", methods=["GET"])
 def consultar_citas_paciente():
-    print("[SERVICIO-CITAS] Solicitud recibida para consultar citas", flush=True)
+    print(
+        "[SERVICIO-CITAS] Solicitud recibida para consultar citas de paciente (/citas_paciente)",
+        flush=True,
+    )
     id_paciente = request.args.get("id_paciente")
 
     if not id_paciente:
@@ -207,7 +244,10 @@ def consultar_citas_paciente():
             for cita in citas
         ]
 
-        print("[SERVICIO-CITAS] Consulta de citas realizada correctamente", flush=True)
+        print(
+            f"[SERVICIO-CITAS] Consulta de citas realizada correctamente. Total: {len(lista_citas)}",
+            flush=True,
+        )
         return (
             jsonify(
                 {
@@ -223,7 +263,6 @@ def consultar_citas_paciente():
         print(f"[SERVICIO-CITAS] Error al consultar citas: {str(e)}", flush=True)
         return jsonify({"Error": str(e)}), 500
     finally:
-        print("[SERVICIO-CITAS] Conexión con base de datos cerrada", flush=True)
         cursor.close()
         conn.close()
 
@@ -231,7 +270,7 @@ def consultar_citas_paciente():
 @app.route("/disponibilidad", methods=["GET"])
 def consultar_disponibilidad():
     print(
-        "[SERVICIO-CITAS] Solicitud recibida para consultar disponibilidad médica",
+        "[SERVICIO-CITAS] Solicitud recibida para consultar disponibilidad médica (/disponibilidad)",
         flush=True,
     )
     doctor_id = request.args.get("id_doctor")
@@ -242,21 +281,33 @@ def consultar_disponibilidad():
         return jsonify({"Error": "El parámetro 'id_doctor' es obligatorio"}), 400
 
     try:
-        print(f"[SERVICIO-CITAS] Validando doctor con ID: {doctor_id}", flush=True)
+        print(
+            f"[SERVICIO-CITAS] Validando doctor con ID: {doctor_id} en servicio Auth",
+            flush=True,
+        )
         url_auth = f"http://autenticacion:5000/usuarios/{doctor_id}"
         auth_response = requests.get(url_auth, timeout=2)
 
         if auth_response.status_code == 404:
-            print("[SERVICIO-CITAS] Doctor no encontrado en el sistema", flush=True)
+            print(
+                f"[SERVICIO-CITAS] Doctor ID {doctor_id} no encontrado en el sistema Auth",
+                flush=True,
+            )
             return jsonify({"Error": "El doctor no existe en el sistema"}), 404
 
         datos_medico = auth_response.json()
         if datos_medico.get("rol_usuario") != "Doctor":
-            print("[SERVICIO-CITAS] El usuario no tiene rol Doctor", flush=True)
+            print(
+                f"[SERVICIO-CITAS] El usuario ID {doctor_id} no tiene rol Doctor",
+                flush=True,
+            )
             return jsonify({"Error": "El usuario seleccionado no es un Doctor"}), 403
 
     except requests.exceptions.RequestException as e:
-        print(f"[SERVICIO-CITAS] Error al conectar con auth: {str(e)}", flush=True)
+        print(
+            f"[SERVICIO-CITAS] Error al conectar con servicio Auth: {str(e)}",
+            flush=True,
+        )
         return (
             jsonify(
                 {
@@ -307,9 +358,10 @@ def consultar_disponibilidad():
 
         disponibles = [h for h in horarios_posibles if h not in ocupadas]
         print(
-            f"[SERVICIO-CITAS] Disponibilidad consultada correctamente para el doctor {doctor_id}",
+            f"[SERVICIO-CITAS] Disponibilidad consultada correctamente para el doctor {doctor_id} en fecha {fecha}",
             flush=True,
         )
+
         return (
             jsonify(
                 {
@@ -329,14 +381,16 @@ def consultar_disponibilidad():
         )
         return jsonify({"Error": str(e)}), 500
     finally:
-        print("[SERVICIO-CITAS] Conexión con base de datos cerrada", flush=True)
         cursor.close()
         conn.close()
 
 
 @app.route("/cancelar/<int:id_citas>", methods=["PUT"])
 def cancelar_cita(id_citas):
-    print("[SERVICIO-CITAS] Solicitud recibida para cancelar una cita", flush=True)
+    print(
+        f"[SERVICIO-CITAS] Solicitud recibida para cancelar la cita ID {id_citas} (/cancelar)",
+        flush=True,
+    )
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -352,14 +406,19 @@ def cancelar_cita(id_citas):
         cita = cursor.fetchone()
 
         if not cita:
-            print("[SERVICIO-CITAS] Error: La cita no existe", flush=True)
+            print(
+                f"[SERVICIO-CITAS] Error: La cita ID {id_citas} no existe", flush=True
+            )
             return jsonify({"Error": "La cita no existe"}), 404
 
         estado_actual = cita[0]
         id_paciente = cita[1]
 
         if estado_actual == "Cancelado":
-            print("[SERVICIO-CITAS] La cita ya estaba cancelada", flush=True)
+            print(
+                f"[SERVICIO-CITAS] La cita ID {id_citas} ya estaba cancelada",
+                flush=True,
+            )
             return jsonify({"mensaje": "La cita ya estaba cancelada"}), 400
 
         cursor.execute(
@@ -372,7 +431,10 @@ def cancelar_cita(id_citas):
         )
         conn.commit()
 
-        print("[SERVICIO-CITAS] Cita cancelada correctamente", flush=True)
+        print(
+            f"[SERVICIO-CITAS] Cita ID {id_citas} cancelada correctamente en BD",
+            flush=True,
+        )
 
         # DISPARAMOS EL EVENTO
         publicar_evento(
@@ -388,14 +450,16 @@ def cancelar_cita(id_citas):
         print(f"[SERVICIO-CITAS] Error al cancelar cita: {str(e)}", flush=True)
         return jsonify({"Error": str(e)}), 500
     finally:
-        print("[SERVICIO-CITAS] Conexión con base de datos cerrada", flush=True)
         cursor.close()
         conn.close()
 
 
 @app.route("/reprogramar/<int:id_citas>", methods=["PUT"])
 def reprogramar_cita(id_citas):
-    print(" [SERVICIO-CITAS] Solicitud recibida para reprogramar una cita", flush=True)
+    print(
+        f"[SERVICIO-CITAS] Solicitud recibida para reprogramar la cita ID {id_citas} (/reprogramar)",
+        flush=True,
+    )
     data = request.get_json()
 
     nueva_fecha = data.get("fecha_programacion_citas")
@@ -409,7 +473,6 @@ def reprogramar_cita(id_citas):
     cursor = conn.cursor()
 
     try:
-       
         cursor.execute(
             """
             SELECT id_doctor_citas, estado_citas, id_paciente_citas
@@ -421,7 +484,9 @@ def reprogramar_cita(id_citas):
         cita = cursor.fetchone()
 
         if not cita:
-            print("[SERVICIO-CITAS] Error: La cita no existe", flush=True)
+            print(
+                f"[SERVICIO-CITAS] Error: La cita ID {id_citas} no existe", flush=True
+            )
             return jsonify({"Error": "La cita no existe"}), 404
 
         doctor_id = cita[0]
@@ -430,7 +495,7 @@ def reprogramar_cita(id_citas):
 
         if estado_actual == "Cancelado":
             print(
-                "[SERVICIO-CITAS] No se puede reprogramar una cita cancelada",
+                f"[SERVICIO-CITAS] Error: Intento de reprogramar una cita cancelada (ID {id_citas})",
                 flush=True,
             )
             return jsonify({"Error": "No se puede reprogramar una cita cancelada"}), 400
@@ -452,7 +517,8 @@ def reprogramar_cita(id_citas):
         conflicto = cursor.fetchone()
         if conflicto:
             print(
-                "[SERVICIO-CITAS] Horario no disponible para reprogramación", flush=True
+                f"[SERVICIO-CITAS] Horario no disponible para reprogramación (Doctor ID {doctor_id})",
+                flush=True,
             )
             return jsonify({"Error": "El horario ya está ocupado"}), 409
 
@@ -469,7 +535,10 @@ def reprogramar_cita(id_citas):
         )
         conn.commit()
 
-        print("[SERVICIO-CITAS] Cita reprogramada correctamente", flush=True)
+        print(
+            f"[SERVICIO-CITAS] Cita ID {id_citas} reprogramada correctamente en BD",
+            flush=True,
+        )
 
         # DISPARAMOS EL EVENTO
         publicar_evento(
@@ -485,23 +554,17 @@ def reprogramar_cita(id_citas):
         print(f"[SERVICIO-CITAS] Error al reprogramar cita: {str(e)}", flush=True)
         return jsonify({"Error": str(e)}), 500
     finally:
-        print("[SERVICIO-CITAS] Conexión con base de datos cerrada", flush=True)
         cursor.close()
         conn.close()
 
+
 @app.route("/health")
 def health():
+    print("[SERVICIO-CITAS] Health check solicitado", flush=True)
+    return jsonify({"status": "ok", "servicio": "Citas"}), 200
 
-    print(
-        "Health check solicitado en citas",
-        flush=True
-    )
 
-    return {
-        "status": "ok",
-        "servicio": "Citas"
-    }
-
+# INICIO DE LA APLICACIÓN
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
