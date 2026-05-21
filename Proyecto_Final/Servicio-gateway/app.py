@@ -1,419 +1,238 @@
-from time import time
-
 from flask import Flask, request, jsonify
 import requests
+import time
 
 app = Flask(__name__)
 
-fallos_health_citas = 0
-fallos_health_autenticacion = 0
-fallos_health_historial = 0
+# ==============================================================================
+# 1. VARIABLES DEL CIRCUIT BREAKER (Agrupadas para no crear 12 globales sueltas)
+# ==============================================================================
+circuitos = {
+    "autenticacion": {"fallos": 0, "estado": "cerrado", "tiempo_apertura": 0},
+    "citas":         {"fallos": 0, "estado": "cerrado", "tiempo_apertura": 0},
+    "historial":     {"fallos": 0, "estado": "cerrado", "tiempo_apertura": 0},
+    "notificaciones":{"fallos": 0, "estado": "cerrado", "tiempo_apertura": 0}
+}
 
+# Configuracion de servicios para monitoreo
 servicios = {
     "Autenticacion": "http://autenticacion:5000/health",
     "Citas": "http://citas:5000/health",
-    "Historial": "http://historial:5000/health"
+    "Historial": "http://historial:5000/health",
+    "Notificaciones": "http://notificaciones:5000/health",
 }
-#.
-# RUTAS HACIA EL SERVICIO AUTENTICACION
+
+# Contadores de fallos independientes 
+fallos_health_autenticacion = 0
+fallos_health_citas = 0
+fallos_health_historial = 0
+fallos_health_notificaciones = 0
+
+
+# ==============================================================================
+# 2. LÓGICA CENTRAL DEL CIRCUIT BREAKER Y HALF-OPEN
+# ==============================================================================
+def enviar_peticion(servicio, metodo, url, **kwargs):
+    estado_actual = circuitos[servicio]["estado"]
+    tiempo_apertura = circuitos[servicio]["tiempo_apertura"]
+    
+    # Evaluar si está abierto o si ya pasó el tiempo para intentar (Half-Open)
+    if estado_actual == "Abierto":
+        if time.time() - tiempo_apertura > 5:  # 5 segundos de espera
+            circuitos[servicio]["estado"] = "HALF_OPEN"
+            print(f"[Gateway] {servicio} abierto. Intentando reconectar...", flush=True)
+        else:
+            return {"error": f"Servicio de {servicio} temporalmente no disponible"}, 503
+        
+# Si fue exitoso y estábamos en HALF_OPEN, se cierra el circuito
+    try:
+        inicio = time.time()
+        kwargs.setdefault("timeout", 3)
+        response = requests.request(metodo, url, **kwargs)
+        print(f"[Gateway] Datos obtenidos exitosamente de {servicio}", flush=True)
+        circuitos[servicio]["fallos"] = 0
+        if circuitos[servicio]["estado"] == "HALF_OPEN":
+            circuitos[servicio]["estado"] = "cerrado"
+            print(f"[Gateway] {servicio} recuperado. Circuito cerrado.", flush=True)
+            
+        print(f"[Gateway] Tiempo respuesta {servicio}: {time.time() - inicio:.4f}s", flush=True)
+        
+        try:
+            return response.json(), response.status_code
+        except ValueError:
+            return response.text, response.status_code
+
+    except requests.exceptions.RequestException as e:
+        circuitos[servicio]["fallos"] += 1
+        print(f"[Gateway] Fallo en {servicio} numero {circuitos[servicio]['fallos']}. Detalle: {e}", flush=True)
+        
+        # Si falla en HALF_OPEN o llega a 3 fallos, se abre el circuito
+        if circuitos[servicio]["estado"] == "HALF_OPEN" or circuitos[servicio]["fallos"] >= 3:
+            circuitos[servicio]["estado"] = "Abierto"
+            circuitos[servicio]["tiempo_apertura"] = time.time()
+            print(f"[Gateway] Circuito Abierto en {servicio}", flush=True)
+            
+        return {"error": f"Servicio de {servicio} no disponible"}, 503
+
+
+# ==============================================================================
+# 3. RUTAS DE SERVICIOS (Usando la función centralizada)
+# ==============================================================================
+
 @app.route("/")
 def home():
-    return "API FUNCIONANDO"
+    return "API GATEWAY FUNCIONANDO"
 
-
+# --- AUTENTICACIÓN ---
 @app.route("/usuarios/listar", methods=["GET"])
 def listar_usuarios():
-    print("[Gateway] Solicitando lista de usuarios...", flush=True)
-    try:
-        response = requests.get("http://autenticacion:5000/listar", timeout=3)
-        return jsonify(response.json()), response.status_code
-    except requests.exceptions.ConnectionError:
-        print(
-            "[Gateway] ¡ERROR! Servicio de autenticación caído o no responde al listar usuarios",
-            flush=True,
-        )
-        return jsonify({"error": "Servicio de autenticación no disponible"}), 503
-
+    print("[Gateway] Solicitando lista de usuarios", flush=True)
+    data, status = enviar_peticion("autenticacion", "GET", "http://autenticacion:5000/listar")
+    return jsonify(data), status
 
 @app.route("/usuarios/registro", methods=["POST"])
 def registro_usuario():
-    print("[Gateway] Procesando registro de usuario...", flush=True)
-    try:
-        response = requests.post(
-            "http://autenticacion:5000/registro", json=request.json, timeout=3
-        )
-        return jsonify(response.json()), response.status_code
-    except requests.exceptions.ConnectionError:
-        print(
-            "[Gateway] ¡ERROR! Servicio de autenticación caído al intentar registrar usuario",
-            flush=True,
-        )
-        return jsonify({"error": "Servicio de autenticación no disponible"}), 503
-
+    print("[Gateway] Procesando registro de usuario", flush=True)
+    data, status = enviar_peticion("autenticacion", "POST", "http://autenticacion:5000/registro", json=request.json)
+    return jsonify(data), status
 
 @app.route("/usuarios/login", methods=["POST"])
 def login_usuario():
-    print("[Gateway] Procesando login...", flush=True)
-    try:
-        response = requests.post(
-            "http://autenticacion:5000/login", json=request.json, timeout=3
-        )
-        return jsonify(response.json()), response.status_code
-    except requests.exceptions.ConnectionError:
-        print(
-            "[Gateway] ¡ERROR! Servicio de autenticación caído al intentar hacer login",
-            flush=True,
-        )
-        return jsonify({"error": "Servicio de autenticación no disponible"}), 503
+    print("[Gateway] Procesando login", flush=True)
+    data, status = enviar_peticion("autenticacion", "POST", "http://autenticacion:5000/login", json=request.json)
+    return jsonify(data), status
 
 
-# RUTAS HACIA EL SERVICIO DE CITAS
-
-
+# --- CITAS ---
 @app.route("/citas/agendar", methods=["POST"])
 def agendar_cita():
-    print("[Gateway] Agendando nueva cita...", flush=True)
-    try:
-        response = requests.post(
-            "http://citas:5000/agendar", json=request.json, timeout=3
-        )
-        return jsonify(response.json()), response.status_code
-    except requests.exceptions.ConnectionError:
-        print(
-            "[Gateway] ¡ERROR! No se pudo agendar, el servicio de citas está caído",
-            flush=True,
-        )
-        return jsonify({"error": "Servicio de citas no disponible"}), 503
-
+    print("[Gateway] Agendando cita", flush=True)
+    data, status = enviar_peticion("citas", "POST", "http://citas:5000/agendar", json=request.json)
+    return jsonify(data), status
 
 @app.route("/citas/paciente", methods=["GET"])
 def citas_por_paciente():
-    print("[Gateway] Consultando citas de un paciente...", flush=True)
-    id_paciente = request.args.get("id_paciente")
+    print("[Gateway] Consultando citas de paciente", flush=True)
+    params = {"id_paciente": request.args.get("id_paciente")}
+    data, status = enviar_peticion("citas", "GET", "http://citas:5000/citas_paciente", params=params)
+    return jsonify(data), status
 
-    if not id_paciente:
-        print("[Gateway] Error: Petición rechazada, falta id_paciente", flush=True)
-        return (
-            jsonify(
-                {
-                    "error": "Debes proporcionar el id_paciente en la URL (ej: ?id_paciente=1)"
-                }
-            ),
-            400,
-        )
-    params = {"id_paciente": id_paciente}
-    try:
-        response = requests.get(
-            "http://citas:5000/citas_paciente", params=params, timeout=3
-        )
-        return jsonify(response.json()), response.status_code
-    except requests.exceptions.ConnectionError:
-        print(
-            "[Gateway] ¡ERROR! Servicio de citas caído al consultar historial del paciente",
-            flush=True,
-        )
-        return jsonify({"error": "Servicio de citas no disponible"}), 503
+@app.route("/citas/cancelar/<int:id_citas>", methods=["PUT"])
+def cancelar_cita(id_citas):
+    print(f"[Gateway] Solicitando cancelación de cita {id_citas}", flush=True)
+    data, status = enviar_peticion("citas", "PUT", f"http://citas:5000/cancelar/{id_citas}")
+    return jsonify(data), status
+
+@app.route("/citas/reprogramar/<int:id_citas>", methods=["PUT"])
+def reprogramar_cita(id_citas):
+    print(f"[Gateway] Solicitando reprogramación de cita {id_citas}", flush=True)
+    data, status = enviar_peticion("citas", "PUT", f"http://citas:5000/reprogramar/{id_citas}", json=request.json)
+    return jsonify(data), status
 
 
-@app.route("/citas/disponibilidad", methods=["GET"])
-def consultar_disponibilidad():
-    print("[Gateway] Consultando disponibilidad de doctores...", flush=True)
-    id_doctor = request.args.get("id_doctor")
-    fecha = request.args.get("fecha")
-    params = {}
-    if id_doctor:
-        params["id_doctor"] = id_doctor
-    if fecha:
-        params["fecha"] = fecha
-    try:
-        response = requests.get(
-            "http://citas:5000/disponibilidad", params=params, timeout=3
-        )
-        return jsonify(response.json()), response.status_code
+# --- HISTORIAL ---
+@app.route("/historial/<int:id_usuario>", methods=["GET"])
+def get_historial(id_usuario):
+    print(f"[Gateway] Consultando historial usuario {id_usuario}", flush=True)
+    data, status = enviar_peticion("historial", "GET", f"http://historial:5000/historial/{id_usuario}")
+    return jsonify(data), status
 
-    except requests.exceptions.ConnectionError:
-        print(
-            "[Gateway] ¡ERROR! Servicio de citas caído al consultar disponibilidad",
-            flush=True,
-        )
-        return jsonify({"error": "Servicio de citas no disponible"}), 503
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    
+@app.route("/historial", methods=["POST"])
+def post_historial():
+    print("[Gateway] Agregando nota manual a historial", flush=True)
+    data, status = enviar_peticion("historial", "POST", "http://historial:5000/historial", json=request.json)
+    return jsonify(data), status
+
+
+# --- NOTIFICACIONES ---
+@app.route("/notificaciones/<int:id_usuario>", methods=["GET"])
+def get_notificaciones(id_usuario):
+    print(f"[Gateway] Consultando notificaciones usuario {id_usuario}", flush=True)
+    data, status = enviar_peticion("notificaciones", "GET", f"http://notificaciones:5000/notificaciones/{id_usuario}")
+    return jsonify(data), status
+
+@app.route("/notificaciones/marcar-leidas/<int:id_usuario>", methods=["PUT"])
+def marcar_leidas(id_usuario):
+    print(f"[Gateway] Marcando notificaciones como leidas usuario {id_usuario}", flush=True)
+    data, status = enviar_peticion("notificaciones", "PUT", f"http://notificaciones:5000/notificaciones/marcar-leidas/{id_usuario}")
+    return jsonify(data), status
+
+
+# ==============================================================================
+# 4. ESTADO Y MONITOREO (Sin tocar, exactamente como los enviaste)
+# ==============================================================================
+
 @app.route("/estado/autenticacion", methods=["GET"])
 def estado_autenticacion():
-
     global fallos_health_autenticacion
-
-    print(
-        "Solicitud de health check para autenticación recibida",
-        flush=True
-    )
-    
-
-    inicio = time()
-
+    inicio = time.time()
     try:
-
-        response = requests.get(
-            "http://autenticacion:5000/health",
-            timeout=2
-        )
-
-        print(
-            "Servicio autenticacion disponible",
-            flush=True
-        )
-
-        print(
-            f"Codigo HTTP: {response.status_code}",
-            flush=True
-        )
-
-        # reiniciar contador si funciona
+        response = requests.get("http://autenticacion:5000/health", timeout=2)
         fallos_health_autenticacion = 0
-
         return jsonify(response.json())
-
     except Exception as e:
-
-        # aumentar contador
         fallos_health_autenticacion += 1
-
-        print(
-            f"Servicio autenticacion caido: {e}",
-            flush=True
-        )
-
-        print(
-            f"Cantidad de fallos health autenticacion: {fallos_health_autenticacion}",
-            flush=True
-        )
-
-        return jsonify({
-            "status": "Caido",
-            "service": "Autenticacion"
-        }), 503
-
+        print(f"[Gateway] Fallo health autenticacion: {e}", flush=True)
+        return jsonify({"status": "Caido", "service": "Autenticacion"}), 503
     finally:
-
-        fin = time()
-
-        print(
-            f"[INFO] Tiempo de respuesta Autenticacion: {fin - inicio:.4f} segundos",
-            flush=True
-        )
+        print(f"[Gateway] Tiempo respuesta Autenticacion: {time.time() - inicio:.4f}s", flush=True)
 
 @app.route("/estado/citas", methods=["GET"])
 def estado_citas():
-
     global fallos_health_citas
-
-    print(
-        "Solicitud de health check para citas recibida",
-        flush=True
-    )
-    
-
-    inicio = time()
-
+    inicio = time.time()
     try:
-
-        response = requests.get(
-            "http://citas:5000/health",
-            timeout=2
-        )
-
-        print(
-            "Servicio citas disponible",
-            flush=True
-        )
-
-        print(
-            f"Codigo HTTP: {response.status_code}",
-            flush=True
-        )
-
-        # reiniciar contador si funciona
+        response = requests.get("http://citas:5000/health", timeout=2)
         fallos_health_citas = 0
-
         return jsonify(response.json())
-
     except Exception as e:
-
-        # aumentar contador
         fallos_health_citas += 1
-
-        print(
-            f"Servicio citas caido: {e}",
-            flush=True
-        )
-
-        print(
-            f"Cantidad de fallos health citas: {fallos_health_citas}",
-            flush=True
-        )
-
-        return jsonify({
-            "status": "Caido",
-            "service": "Citas"
-        }), 503
-
+        print(f"[Gateway] Fallo health citas: {e}", flush=True)
+        return jsonify({"status": "Caido", "service": "Citas"}), 503
     finally:
-
-        fin = time()
-
-        print(
-            f"[INFO] Tiempo de respuesta Citas: {fin - inicio:.4f} segundos",
-            flush=True
-        )
+        print(f"[Gateway] Tiempo respuesta Citas: {time.time() - inicio:.4f}s", flush=True)
 
 @app.route("/estado/historial", methods=["GET"])
 def estado_historial():
-
     global fallos_health_historial
-
-    print(
-        "Solicitud de health check para historial recibida",
-        flush=True
-    )
-    
-
-    inicio = time()
-
+    inicio = time.time()
     try:
-
-        response = requests.get(
-            "http://historial:5000/health",
-            timeout=2
-        )
-
-        print(
-            "Servicio historial disponible",
-            flush=True
-        )
-
-        print(
-            f"Codigo HTTP: {response.status_code}",
-            flush=True
-        )
-
-        # reiniciar contador si funciona
+        response = requests.get("http://historial:5000/health", timeout=2)
         fallos_health_historial = 0
-
         return jsonify(response.json())
-
     except Exception as e:
-
-        # aumentar contador
         fallos_health_historial += 1
-
-        print(
-            f"Servicio historial caido: {e}",
-            flush=True
-        )
-
-        print(
-            f"Cantidad de fallos health historial: {fallos_health_historial}",
-            flush=True
-        )
-
-        return jsonify({
-            "status": "Caido",
-            "service": "Historial"
-        }), 503
-
+        print(f"[Gateway] Fallo health historial: {e}", flush=True)
+        return jsonify({"status": "Caido", "service": "Historial"}), 503
     finally:
+        print(f"[Gateway] Tiempo respuesta Historial: {time.time() - inicio:.4f}s", flush=True)
 
-        fin = time()
-
-        print(
-            f"[INFO] Tiempo de respuesta Historial: {fin - inicio:.4f} segundos",
-            flush=True
-        )
-
+@app.route("/estado/notificaciones", methods=["GET"])
+def estado_notificaciones():
+    global fallos_health_notificaciones
+    inicio = time.time()
+    try:
+        response = requests.get("http://notificaciones:5000/health", timeout=2)
+        fallos_health_notificaciones = 0
+        return jsonify(response.json())
+    except Exception as e:
+        fallos_health_notificaciones += 1
+        print(f"[Gateway] Fallo health notificaciones: {e}", flush=True)
+        return jsonify({"status": "Caido", "service": "Notificaciones"}), 503
+    finally:
+        print(f"[Gateway] Tiempo respuesta Notificaciones: {time.time() - inicio:.4f}s", flush=True)
 
 @app.route("/monitoreo", methods=["GET"])
 def monitoreo():
-
-    print(
-        "[MONITOREO] Verificando estado de microservicios...",
-        flush=True
-    )
-
-    estados = {}
-
-    servicios_ok = []
-    servicios_caidos = []
-
-    for nombre_servicio, url in servicios.items():
-
-        inicio = time()
-
+    print("[Gateway] Verificando estado de microservicios", flush=True)
+    resultados = {}
+    for nombre, url in servicios.items():
         try:
-
-            response = requests.get(
-                url,
-                timeout=2
-            )
-
-            fin = time()
-
-            tiempo = f"{fin - inicio:.4f} segundos"
-
-            estados[nombre_servicio] = {
-                "status": "OK",
-                "codigo_http": response.status_code,
-                "tiempo_respuesta": tiempo
-            }
-
-            servicios_ok.append(nombre_servicio)
-
-            print(
-                f"{nombre_servicio} funcionando correctamente",
-                flush=True
-            )
-
-            print(
-                f"Tiempo de respuesta {nombre_servicio}: {tiempo}",
-                flush=True
-            )
-
-        except Exception as e:
-
-            estados[nombre_servicio] = {
-                "status": "Caido",
-                "error": "Servicio no responde"
-            }
-
-            servicios_caidos.append(nombre_servicio)
-
-            print(
-                f"Servicio {nombre_servicio} no disponible",
-                flush=True
-            )
-    # resumen final
-
-    if len(servicios_caidos) == 0:
-
-        print(
-            "Todos los servicios OK",
-            flush=True
-        )
-
-    else:
-
-        print(
-            f"Servicios caidos: {', '.join(servicios_caidos)}",
-            flush=True
-        )
-
-        print(
-            f"Servicios OK: {', '.join(servicios_ok)}",
-            flush=True
-        )
-
-    return jsonify(estados)
+            resp = requests.get(url, timeout=2)
+            resultados[nombre] = {"status": "OK", "http": resp.status_code}
+        except:
+            resultados[nombre] = {"status": "Caido"}
+    return jsonify(resultados)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

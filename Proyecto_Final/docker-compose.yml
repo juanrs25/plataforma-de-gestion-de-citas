@@ -1,5 +1,5 @@
 services:
-#.
+
   # API GATEWAY
 
   gateway:
@@ -74,6 +74,27 @@ services:
     volumes:
       - db_historial_data:/var/lib/mysql
 
+  # SERVICIO NOTIFICACIONES
+  notificaciones:
+    build: ./Servicio-notificaciones
+    ports:
+      - "5004:5000"
+    depends_on:
+      - db_notificaciones
+      - rabbitmq
+    env_file:
+      - .env
+
+  db_notificaciones:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${NOTIFICACIONES_MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${NOTIFICACIONES_MYSQL_DATABASE}
+    ports:
+      - "3310:3306"
+    volumes:
+      - db_notificaciones_data:/var/lib/mysql
+
   # RABBITMQ
 
   rabbitmq:
@@ -86,4 +107,5 @@ volumes:
   db_auth_data:
   db_citas_data:
   db_historial_data:
+  db_notificaciones_data:
 
