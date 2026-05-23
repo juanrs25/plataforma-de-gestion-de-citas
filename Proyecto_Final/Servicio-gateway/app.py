@@ -50,7 +50,7 @@ def enviar_peticion(servicio, metodo, url, **kwargs):
         kwargs.setdefault("timeout", 3)
         response = requests.request(metodo, url, **kwargs)
         print(f"[Gateway] Datos obtenidos exitosamente de {servicio}", flush=True)
-        circuitos[servicio]["fallos"] = 0
+        
         if circuitos[servicio]["estado"] == "HALF_OPEN":
             circuitos[servicio]["estado"] = "cerrado"
             print(f"[Gateway] {servicio} recuperado. Circuito cerrado.", flush=True)
@@ -162,77 +162,58 @@ def marcar_leidas(id_usuario):
 # 4. ESTADO Y MONITOREO (Sin tocar, exactamente como los enviaste)
 # ==============================================================================
 
-@app.route("/estado/autenticacion", methods=["GET"])
-def estado_autenticacion():
-    global fallos_health_autenticacion
-    inicio = time.time()
-    try:
-        response = requests.get("http://autenticacion:5000/health", timeout=2)
-        fallos_health_autenticacion = 0
-        return jsonify(response.json())
-    except Exception as e:
-        fallos_health_autenticacion += 1
-        print(f"[Gateway] Fallo health autenticacion: {e}", flush=True)
-        return jsonify({"status": "Caido", "service": "Autenticacion"}), 503
-    finally:
-        print(f"[Gateway] Tiempo respuesta Autenticacion: {time.time() - inicio:.4f}s", flush=True)
 
-@app.route("/estado/citas", methods=["GET"])
-def estado_citas():
-    global fallos_health_citas
-    inicio = time.time()
-    try:
-        response = requests.get("http://citas:5000/health", timeout=2)
-        fallos_health_citas = 0
-        return jsonify(response.json())
-    except Exception as e:
-        fallos_health_citas += 1
-        print(f"[Gateway] Fallo health citas: {e}", flush=True)
-        return jsonify({"status": "Caido", "service": "Citas"}), 503
-    finally:
-        print(f"[Gateway] Tiempo respuesta Citas: {time.time() - inicio:.4f}s", flush=True)
-
-@app.route("/estado/historial", methods=["GET"])
-def estado_historial():
-    global fallos_health_historial
-    inicio = time.time()
-    try:
-        response = requests.get("http://historial:5000/health", timeout=2)
-        fallos_health_historial = 0
-        return jsonify(response.json())
-    except Exception as e:
-        fallos_health_historial += 1
-        print(f"[Gateway] Fallo health historial: {e}", flush=True)
-        return jsonify({"status": "Caido", "service": "Historial"}), 503
-    finally:
-        print(f"[Gateway] Tiempo respuesta Historial: {time.time() - inicio:.4f}s", flush=True)
-
-@app.route("/estado/notificaciones", methods=["GET"])
-def estado_notificaciones():
-    global fallos_health_notificaciones
-    inicio = time.time()
-    try:
-        response = requests.get("http://notificaciones:5000/health", timeout=2)
-        fallos_health_notificaciones = 0
-        return jsonify(response.json())
-    except Exception as e:
-        fallos_health_notificaciones += 1
-        print(f"[Gateway] Fallo health notificaciones: {e}", flush=True)
-        return jsonify({"status": "Caido", "service": "Notificaciones"}), 503
-    finally:
-        print(f"[Gateway] Tiempo respuesta Notificaciones: {time.time() - inicio:.4f}s", flush=True)
 
 @app.route("/monitoreo", methods=["GET"])
 def monitoreo():
-    print("[Gateway] Verificando estado de microservicios", flush=True)
-    resultados = {}
-    for nombre, url in servicios.items():
-        try:
-            resp = requests.get(url, timeout=2)
-            resultados[nombre] = {"status": "OK", "http": resp.status_code}
-        except:
-            resultados[nombre] = {"status": "Caido"}
-    return jsonify(resultados)
 
+    resultados = {}
+
+    nombres_circuito = {
+        "Autenticacion": "autenticacion",
+        "Citas": "citas",
+        "Historial": "historial",
+        "Notificaciones": "notificaciones"
+    }
+
+    for nombre, url in servicios.items():
+
+        servicio_cb = nombres_circuito[nombre]
+
+        inicio = time.time()
+
+        try:
+
+            response = requests.get(
+                url,
+                timeout=2
+            )
+
+            fin = time.time()
+
+            tiempo_respuesta = fin - inicio
+
+            resultados[nombre] = {
+                "http": response.status_code,
+                "status": "OK",
+                "tiempo_respuesta": f"{tiempo_respuesta:.4f}s",
+                "fallos": circuitos[servicio_cb]["fallos"],
+                "estado_circuito": circuitos[servicio_cb]["estado"]
+            }
+
+        except Exception:
+
+            fin = time.time()
+
+            tiempo_respuesta = fin - inicio
+
+            resultados[nombre] = {
+                "status": "Caido",
+                "tiempo_respuesta": f"{tiempo_respuesta:.4f}s",
+                "fallos": circuitos[servicio_cb]["fallos"],
+                "estado_circuito": circuitos[servicio_cb]["estado"]
+            }
+
+    return jsonify(resultados)
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
