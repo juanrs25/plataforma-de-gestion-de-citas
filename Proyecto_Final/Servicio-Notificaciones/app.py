@@ -151,7 +151,7 @@ def health():
 
     print("Health check solicitado en historial", flush=True)
 
-    return {"status": "ok", "servicio": "Historial"}
+    return {"status": "ok", "servicio": "Notificaciones"}
 
 
 
