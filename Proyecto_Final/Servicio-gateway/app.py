@@ -158,9 +158,6 @@ def marcar_leidas(id_usuario):
     return jsonify(data), status
 
 
-# ==============================================================================
-# 4. ESTADO Y MONITOREO (Sin tocar, exactamente como los enviaste)
-# ==============================================================================
 
 @app.route("/estado/autenticacion", methods=["GET"])
 def estado_autenticacion():
@@ -177,35 +174,9 @@ def estado_autenticacion():
     finally:
         print(f"[Gateway] Tiempo respuesta Autenticacion: {time.time() - inicio:.4f}s", flush=True)
 
-@app.route("/estado/citas", methods=["GET"])
-def estado_citas():
-    global fallos_health_citas
-    inicio = time.time()
-    try:
-        response = requests.get("http://citas:5000/health", timeout=2)
-        fallos_health_citas = 0
-        return jsonify(response.json())
-    except Exception as e:
-        fallos_health_citas += 1
-        print(f"[Gateway] Fallo health citas: {e}", flush=True)
-        return jsonify({"status": "Caido", "service": "Citas"}), 503
-    finally:
-        print(f"[Gateway] Tiempo respuesta Citas: {time.time() - inicio:.4f}s", flush=True)
-
-@app.route("/estado/historial", methods=["GET"])
-def estado_historial():
-    global fallos_health_historial
-    inicio = time.time()
-    try:
-        response = requests.get("http://historial:5000/health", timeout=2)
-        fallos_health_historial = 0
-        return jsonify(response.json())
-    except Exception as e:
-        fallos_health_historial += 1
-        print(f"[Gateway] Fallo health historial: {e}", flush=True)
-        return jsonify({"status": "Caido", "service": "Historial"}), 503
-    finally:
-        print(f"[Gateway] Tiempo respuesta Historial: {time.time() - inicio:.4f}s", flush=True)
+# ==============================================================================
+# ESTADOS Y MONITOREO 
+# ==============================================================================
 
 @app.route("/estado/notificaciones", methods=["GET"])
 def estado_notificaciones():
@@ -221,6 +192,52 @@ def estado_notificaciones():
         return jsonify({"status": "Caido", "service": "Notificaciones"}), 503
     finally:
         print(f"[Gateway] Tiempo respuesta Notificaciones: {time.time() - inicio:.4f}s", flush=True)
+
+@app.route("/estado/autenticacion", methods=["GET"])
+def estado_autenticacion():
+    global fallos_health_autenticacion
+    inicio = time.time()
+    try:
+        response = requests.get("http://autenticacion:5000/health", timeout=2)
+        fallos_health_autenticacion = 0
+        return jsonify(response.json())
+    except Exception as e:
+        fallos_health_autenticacion += 1
+        print(f"[Gateway] Fallo health autenticacion: {e}", flush=True)
+        return jsonify({"status": "Caido", "service": "Autenticacion"}), 503
+    finally:
+        print(f"[Gateway] Tiempo respuesta Autenticacion: {time.time() - inicio:.4f}s", flush=True)
+
+
+@app.route("/estado/citas", methods=["GET"])
+def estado_citas():
+    global fallos_health_citas
+    inicio = time.time()
+    try:
+        response = requests.get("http://citas:5000/health", timeout=2)
+        fallos_health_citas = 0
+        return jsonify(response.json())
+    except Exception as e:
+        fallos_health_citas += 1
+        print(f"[Gateway] Fallo health citas: {e}", flush=True)
+        return jsonify({"status": "Caido", "service": "Citas"}), 503
+    finally:
+        print(f"[Gateway] Tiempo respuesta Citas: {time.time() - inicio:.4f}s", flush=True)
+        
+@app.route("/estado/historial", methods=["GET"])
+def estado_historial():
+    global fallos_health_historial
+    inicio = time.time()
+    try:
+        response = requests.get("http://historial:5000/health", timeout=2)
+        fallos_health_historial = 0
+        return jsonify(response.json())
+    except Exception as e:
+        fallos_health_historial += 1
+        print(f"[Gateway] Fallo health historial: {e}", flush=True)
+        return jsonify({"status": "Caido", "service": "Historial"}), 503
+    finally:
+        print(f"[Gateway] Tiempo respuesta Historial: {time.time() - inicio:.4f}s", flush=True)
 
 @app.route("/monitoreo", methods=["GET"])
 def monitoreo():
