@@ -33,47 +33,142 @@ fallos_health_notificaciones = 0
 # 2. LÓGICA CENTRAL DEL CIRCUIT BREAKER Y HALF-OPEN
 # ==============================================================================
 def enviar_peticion(servicio, metodo, url, **kwargs):
+
     estado_actual = circuitos[servicio]["estado"]
     tiempo_apertura = circuitos[servicio]["tiempo_apertura"]
-    
-    # Evaluar si está abierto o si ya pasó el tiempo para intentar (Half-Open)
+
+    # =========================
+    # VALIDAR ESTADO DEL CIRCUITO
+    # =========================
     if estado_actual == "Abierto":
-        if time.time() - tiempo_apertura > 5:  # 5 segundos de espera
+
+        tiempo_transcurrido = time.time() - tiempo_apertura
+
+        # Si ya pasaron 10 segundos -> HALF_OPEN
+        if tiempo_transcurrido > 10:
+
             circuitos[servicio]["estado"] = "HALF_OPEN"
-            print(f"[Gateway] {servicio} abierto. Intentando reconectar...", flush=True)
+
+            print(
+                f"[Gateway] {servicio} entrando en estado HALF_OPEN. "
+                f"Intentando reconexión al servicio...",
+                flush=True
+            )
+
         else:
-            return {"error": f"Servicio de {servicio} temporalmente no disponible"}, 503
-        
-# Si fue exitoso y estábamos en HALF_OPEN, se cierra el circuito
+
+            tiempo_restante = 10 - tiempo_transcurrido
+
+            print(
+                f"[Gateway] Circuito ABIERTO en {servicio}. "
+                f"Esperando {tiempo_restante:.1f}s para intentar nuevamente.",
+                flush=True
+            )
+
+            return {
+                "error": f"Servicio de {servicio} temporalmente no disponible",
+            }, 503
+
+    # =========================
+    # INTENTAR PETICIÓN
+    # =========================
     try:
+
         inicio = time.time()
+
         kwargs.setdefault("timeout", 3)
-        response = requests.request(metodo, url, **kwargs)
-        print(f"[Gateway] Datos obtenidos exitosamente de {servicio}", flush=True)
-        
+
+        response = requests.request(
+            metodo,
+            url,
+            **kwargs
+        )
+
+        tiempo_respuesta = time.time() - inicio
+
+        print(
+            f"[Gateway] Datos obtenidos exitosamente de {servicio}",
+            flush=True
+        )
+
+        # Reiniciar contador de fallos
+        circuitos[servicio]["fallos"] = 0
+
+        # =========================
+        # SI ESTABA EN HALF_OPEN
+        # =========================
         if circuitos[servicio]["estado"] == "HALF_OPEN":
+
+            print(
+                f"[Gateway] {servicio} respondió correctamente en HALF_OPEN. "
+                f"Cerrando circuito...",
+                flush=True
+            )
+
             circuitos[servicio]["estado"] = "cerrado"
-            print(f"[Gateway] {servicio} recuperado. Circuito cerrado.", flush=True)
-            
-        print(f"[Gateway] Tiempo respuesta {servicio}: {time.time() - inicio:.4f}s", flush=True)
-        
+
+            print(
+                f"[Gateway] Circuito cerrado nuevamente para {servicio}",
+                flush=True
+            )
+
+        print(
+            f"[Gateway] Tiempo respuesta {servicio}: "
+            f"{tiempo_respuesta:.4f}s",
+            flush=True
+        )
+
         try:
             return response.json(), response.status_code
+
         except ValueError:
             return response.text, response.status_code
 
+    # =========================
+    # MANEJO DE ERRORES
+    # =========================
     except requests.exceptions.RequestException as e:
-        circuitos[servicio]["fallos"] += 1
-        print(f"[Gateway] Fallo en {servicio} numero {circuitos[servicio]['fallos']}. Detalle: {e}", flush=True)
-        
-        # Si falla en HALF_OPEN o llega a 3 fallos, se abre el circuito
-        if circuitos[servicio]["estado"] == "HALF_OPEN" or circuitos[servicio]["fallos"] >= 3:
-            circuitos[servicio]["estado"] = "Abierto"
-            circuitos[servicio]["tiempo_apertura"] = time.time()
-            print(f"[Gateway] Circuito Abierto en {servicio}", flush=True)
-            
-        return {"error": f"Servicio de {servicio} no disponible"}, 503
 
+        circuitos[servicio]["fallos"] += 1
+
+        print(
+            f"[Gateway] Fallo en {servicio} numero "
+            f"{circuitos[servicio]['fallos']}. "
+            f"Detalle: {e}",
+            flush=True
+        )
+
+        # =========================
+        # FALLÓ EN HALF_OPEN
+        # =========================
+        if circuitos[servicio]["estado"] == "HALF_OPEN":
+
+            print(
+                f"[Gateway] {servicio} falló en estado HALF_OPEN. "
+                f"Reabriendo circuito...",
+                flush=True
+            )
+
+        # =========================
+        # ABRIR CIRCUITO
+        # =========================
+        if (
+            circuitos[servicio]["estado"] == "HALF_OPEN"
+            or circuitos[servicio]["fallos"] >= 3
+        ):
+
+            circuitos[servicio]["estado"] = "Abierto"
+
+            circuitos[servicio]["tiempo_apertura"] = time.time()
+
+            print(
+                f"[Gateway] Circuito ABIERTO en {servicio}",
+                flush=True
+            )
+
+        return {
+            "error": f"Servicio de {servicio} no disponible"
+        }, 503
 
 # ==============================================================================
 # 3. RUTAS DE SERVICIOS (Usando la función centralizada)
