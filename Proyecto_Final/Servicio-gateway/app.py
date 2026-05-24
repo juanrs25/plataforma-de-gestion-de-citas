@@ -5,7 +5,7 @@ import time
 app = Flask(__name__)
 
 # ==============================================================================
-# 1. VARIABLES DEL CIRCUIT BREAKER (Agrupadas para no crear 12 globales sueltas)
+# VARIABLES DEL CIRCUIT BREAKER
 # ==============================================================================
 circuitos = {
     "autenticacion": {"fallos": 0, "estado": "cerrado", "tiempo_apertura": 0},
@@ -30,7 +30,7 @@ fallos_health_notificaciones = 0
 
 
 # ==============================================================================
-# 2. LÓGICA CENTRAL DEL CIRCUIT BREAKER Y HALF-OPEN
+# LÓGICA CENTRAL DEL CIRCUIT BREAKER Y HALF-OPEN
 # ==============================================================================
 def enviar_peticion(servicio, metodo, url, **kwargs):
 
@@ -171,7 +171,7 @@ def enviar_peticion(servicio, metodo, url, **kwargs):
         }, 503
 
 # ==============================================================================
-# 3. RUTAS DE SERVICIOS (Usando la función centralizada)
+# RUTAS DE SERVICIOS 
 # ==============================================================================
 
 @app.route("/")
@@ -199,6 +199,24 @@ def login_usuario():
 
 
 # --- CITAS ---
+
+@app.route("/citas/disponibilidad", methods=["GET"])
+def consultar_disponibilidad_gateway():
+    print("[Gateway] Consultando disponibilidad de doctor", flush=True)
+
+    params = {
+        "id_doctor": request.args.get("id_doctor"),
+        "fecha": request.args.get("fecha"),
+    }
+
+    data, status = enviar_peticion(
+        "citas",
+        "GET",
+        "http://citas:5000/disponibilidad",
+        params=params
+    )
+
+    return jsonify(data), status
 @app.route("/citas/agendar", methods=["POST"])
 def agendar_cita():
     print("[Gateway] Agendando cita", flush=True)
