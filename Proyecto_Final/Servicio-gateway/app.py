@@ -102,6 +102,9 @@ def login_usuario():
     data, status = enviar_peticion("autenticacion", "POST", "http://autenticacion:5000/login", json=request.json)
     return jsonify(data), status
 
+@app.route("/citas/disponibilidad", methods=["GET"])
+def consultar_disponibilidad_gateway():
+    print("[Gateway] Consultando disponibilidad de doctor", flush=True)
 
 # --- CITAS ---
 @app.route("/citas/agendar", methods=["POST"])
@@ -224,14 +227,54 @@ def estado_notificaciones():
 
 @app.route("/monitoreo", methods=["GET"])
 def monitoreo():
-    print("[Gateway] Verificando estado de microservicios", flush=True)
+
     resultados = {}
+
+    nombres_circuito = {
+        "Autenticacion": "autenticacion",
+        "Citas": "citas",
+        "Historial": "historial",
+        "Notificaciones": "notificaciones"
+    }
+
     for nombre, url in servicios.items():
+
+        servicio_cb = nombres_circuito[nombre]
+
+        inicio = time.time()
+
         try:
-            resp = requests.get(url, timeout=2)
-            resultados[nombre] = {"status": "OK", "http": resp.status_code}
-        except:
-            resultados[nombre] = {"status": "Caido"}
+
+            response = requests.get(
+                url,
+                timeout=2
+            )
+
+            fin = time.time()
+
+            tiempo_respuesta = fin - inicio
+
+            resultados[nombre] = {
+                "http": response.status_code,
+                "status": "OK",
+                "tiempo_respuesta": f"{tiempo_respuesta:.4f}s",
+                "fallos": circuitos[servicio_cb]["fallos"],
+                "estado_circuito": circuitos[servicio_cb]["estado"]
+            }
+
+        except Exception:
+
+            fin = time.time()
+
+            tiempo_respuesta = fin - inicio
+
+            resultados[nombre] = {
+                "status": "Caido",
+                "tiempo_respuesta": f"{tiempo_respuesta:.4f}s",
+                "fallos": circuitos[servicio_cb]["fallos"],
+                "estado_circuito": circuitos[servicio_cb]["estado"]
+            }
+
     return jsonify(resultados)
 
 if __name__ == "__main__":
